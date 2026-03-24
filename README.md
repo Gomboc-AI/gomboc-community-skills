@@ -1,6 +1,6 @@
-# Gomboc Security Remediation Skill for Claude Code
+# Gomboc Community Agent Skills
 
-**Deterministic security fixes for infrastructure code — powered by Gomboc.ai Community Edition.**
+**Deterministic fixes for source code — powered by Gomboc.ai Community Edition.**
 
 ![Status: Production Ready](https://img.shields.io/badge/status-production%20ready-green)
 ![Tests: 10/10](https://img.shields.io/badge/tests-10%2F10%20passed-green)
@@ -8,7 +8,7 @@
 
 ## What This Skill Does
 
-Integrates Gomboc.ai's deterministic AI security remediation into Claude Code, enabling you to:
+Integrates Gomboc.ai's deterministic AI code remediations into Claude Code, Gemini, and OpenClaw, enabling you to:
 
 - 🔍 **Scan** infrastructure code (Terraform, CloudFormation, IaC) for security issues
 - 🔧 **Generate** merge-ready fixes with 94%+ acceptance rate
@@ -252,7 +252,6 @@ A: Gomboc offers a pro version for teams. Check https://www.gomboc.ai
 ## Support
 
 - **Gomboc Docs:** https://docs.gomboc.ai
-- **GitHub Issues:** https://github.com/andrewpetecoleman-cloud/clawhub-gomboc-security/issues
 - **Gomboc Community:** https://github.com/Gomboc-AI/gomboc-ai-feedback/discussions
 
 ## Testing
@@ -287,8 +286,6 @@ Gomboc Community Edition: Free forever under their community license.
 
 ---
 
-**Built with ❤️ by OpenClaw Community**  
 **Powered by Gomboc.ai**  
 **Status: Production Ready** ✅
 
-[GitHub Repo](https://github.com/andrewpetecoleman-cloud/clawhub-gomboc-security) | [Gomboc Website](https://www.gomboc.ai) | [ClawHub Skill](https://clawhub.com)
