@@ -1,0 +1,20 @@
+---
+type: Test
+version: v1
+metadata:
+  name: CKV_AWS_2 ALB Listener HTTPS Test
+  priority: 1
+spec:
+  rulespace: "."
+  cases:
+    - name: ALB Listener HTTPS
+      language: cloudformation-yaml
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./workspace_expected
+      expected_report:
+        rules_applied: 2
+        findings: 5
+        fixes: 5
+        errors: []

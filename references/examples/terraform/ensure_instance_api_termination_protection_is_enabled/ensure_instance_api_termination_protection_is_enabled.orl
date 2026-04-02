@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    use-case-1: git@github.com:Gomboc-AI/orl-rules.git;main;/rules/terraform/aws/aws_instance/ensure-instance-api-termination-protection-is-enabled
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+
+    gomboc-ai/reviewer/name: Zach Talarick
+    gomboc-ai/reviewer/date: "2025-12-15"
+    gomboc-ai/reviewer/status: valid
+
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: aws_instance
+    gomboc-ai/source: known_universe
+
+    gomboc-ai/known_universe/date: 2025-11-24
+    gomboc-ai/known_universe/id: "38"
+    gomboc-ai/known_universe/name: Ensure Instance API termination protection is enabled
+
+    gomboc-ai/risk/score: high
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      This is an in-place update with no downtime. However, it significantly impacts the destruction workflow. terraform destroy will fail on instances with this flag enabled. To delete these instances later, you must explicitly set this attribute to false and apply that change before destruction is possible. This effectively disables automated environment teardowns for these resources.
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Prevents accidental termination of critical EC2 instances through API calls, protecting against human error or malicious actions. Ensures important workloads remain available and reduces the risk of data loss from unintended instance deletion.
+
+    gomboc-ai/risk/statement-plain: This is an in-place update with no downtime. However, it significantly impacts the destruction workflow. terraform destroy will fail on instances with this flag enabled. To delete these instances later, you must explicitly set this attribute to false and apply that change before destruction is possible. This effectively disables automated environment teardowns for these resources.
+
+    gomboc-ai/impact/statement-plain: Prevents accidental termination of critical EC2 instances through API calls, protecting against human error or malicious actions. Ensures important workloads remain available and reduces the risk of data loss from unintended instance deletion.
+
+    gomboc-ai/description-plain: Enables API termination protection for AWS EC2 instances by setting disable_api_termination to true.
+
+    gomboc-ai/example: |
+      ```diff
+      resource "aws_instance" "example" {
+        ami           = "ami-0c55b159cbfafe1f0"
+        instance_type = "t2.micro"
+
+      + disable_api_termination = true
+      }
+      ```
+
+      ```diff
+      resource "aws_instance" "example2" {
+        ami           = "ami-0c55b159cbfafe1f0"
+        instance_type = "t2.micro"
+        
+      - disable_api_termination = false
+      + disable_api_termination = true
+      }
+      ```
+    
+
+  priority: 1300200
+  classifications:
+    - gomboc-ai/policy/secure_management/accidental_deletion_protection/deletion_protection
+    - gomboc-ai/cis/controls_8-1-2/11_data_recovery/11-3_protect_recovery_data
+  name: gomboc-ai/ensure-instance-api-termination-protection-is-enabled
+  display_name: Ensure Instance API termination protection is enabled
+  description: |
+    ## Description
+
+    Enables API termination protection for AWS EC2 instances by setting disable_api_termination to true.
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+  rules:
+
+  - name: ensure-that-disable_api_termination-is-true-when-it-is-explicitly-wrong
+    audit: |
+      {{ aResource("aws_instance", anAttributeValueNotEq("disable_api_termination", "true")) }}
+    remediation:
+      - command: replace
+        path: value
+        value: "true"
+
+  - name: ensure-that-disable_api_termination-is-true-when-it-is-missing
+    audit: |
+      {{ aResource("aws_instance", aMissingAttribute("disable_api_termination")) }}
+    remediation:
+      - command: insert_after
+        path: body
+        flags:
+          indent: "  "
+          prefix: "\n\n"
+        value: |
+          disable_api_termination = true

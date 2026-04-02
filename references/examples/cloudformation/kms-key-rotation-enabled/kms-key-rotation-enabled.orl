@@ -1,0 +1,335 @@
+---
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: AWS::KMS::Key
+    gomboc-ai/reviewer/name: AI Assistant
+    gomboc-ai/reviewer/date: 2026-03-11
+    gomboc-ai/reviewer/status: valid
+    gomboc-ai/visibility: public
+    use-case-1: "git@github.com:Gomboc-AI/orl-rules.git;main;/config_options/rules/kms-key-rotation-enabled"
+    gomboc-ai/example: |-
+      ```diff
+      Resources:
+        MyKMSKey:
+          Type: AWS::KMS::Key
+          Properties:
+            Description: My symmetric KMS key
+            KeyPolicy:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Principal:
+                    AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                  Action: "kms:*"
+                  Resource: "*"
+      +         EnableKeyRotation: true
+      ```
+    gomboc-ai/description-plain: "Ensures that automatic annual key rotation is enabled for customer-managed symmetric AWS KMS keys by setting EnableKeyRotation to true."
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement-plain: "Enables automatic annual key rotation for customer-managed symmetric KMS keys. Without rotation, a long-lived key material increases the blast radius of a key compromise. Setting EnableKeyRotation to true causes AWS to automatically rotate the key material every year, limiting exposure while keeping the same key ID and alias for applications."
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Enables automatic annual key rotation for customer-managed symmetric KMS keys. Without rotation, long-lived key material increases the blast radius of a key compromise.
+
+      - **Setting added/corrected**: `EnableKeyRotation: true`
+      - **Effect**: AWS automatically rotates the underlying key material every 365 days.
+      - **Transparency**: The key ID, ARN, and alias remain unchanged, so no application updates are required.
+      - **Compliance**: Satisfies CIS, PCI-DSS, and SOC 2 requirements for periodic cryptographic key rotation.
+    gomboc-ai/risk/score: low
+    gomboc-ai/risk/statement-plain: "Enabling key rotation is an in-place settings change. It does not recreate the KMS key, cause downtime, incur significant additional cost, or affect existing encrypted data. Previously encrypted data remains accessible because AWS retains all prior key versions for decryption. There is no data loss, no resource replacement, and no integration failure risk."
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      Enabling key rotation is an **in-place configuration change** with minimal operational risk:
+
+      - **Dollar cost**: Negligible; AWS charges a small fee per key version stored, typically a few cents per month.
+      - **Resource recreation**: None. The KMS key resource is not replaced; only its rotation schedule is updated.
+      - **Data loss**: None. All previous key versions are retained by AWS, so existing ciphertext remains decryptable.
+      - **Downtime**: None. The change takes effect immediately with no service interruption.
+      - **Performance tradeoffs**: None. Rotation is a background operation transparent to callers.
+      - **Integration failure**: None. The key ID, ARN, and all aliases are preserved after rotation.
+  classifications:
+    - gomboc-ai/policy/authentication/key_rotation
+    - gomboc-ai/policy/surface_area/capacity_planning_and_resilience/enforce_key_rotation
+    - gomboc-ai/prismacloud/CKV_AWS_7
+  description: |
+    ## Description
+
+    Ensures that automatic key rotation is enabled for customer-managed symmetric KMS keys.
+    Only symmetric keys (KeySpec absent or SYMMETRIC_DEFAULT) support automatic rotation.
+    Asymmetric keys (RSA, ECC, SM2) and HMAC keys are excluded as AWS does not support
+    automatic rotation for those key types.
+  display_name: Enable Key Rotation for AWS::KMS::Key
+  name: gomboc-ai/cloudformation/aws/kms-key/kms-key-rotation-enabled
+spec:
+  template:
+    language: cloudformation-yaml
+    audit_language: ast
+    collect:
+      - name: symmetric_keyspec_resources
+        audit: |
+          (block_mapping_pair
+            (flow_node) @_section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @_type_key
+                        (flow_node) @_type_value
+                      )
+                      (block_mapping_pair
+                        (flow_node) @_props_key
+                        (block_node
+                          (block_mapping
+                            (block_mapping_pair
+                              (flow_node) @_keyspec_key
+                              (flow_node) @_keyspec_value
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @_section "Resources")
+            (#eq? @_type_key "Type")
+            (#eq? @_type_value "AWS::KMS::Key")
+            (#eq? @_props_key "Properties")
+            (#eq? @_keyspec_key "KeySpec")
+            (#match? @_keyspec_value "^[\"']?SYMMETRIC_DEFAULT[\"']?$")
+          )
+      - name: has_keyspec_resources
+        audit: |
+          (block_mapping_pair
+            (flow_node) @_section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @_type_key
+                        (flow_node) @_type_value
+                      )
+                      (block_mapping_pair
+                        (flow_node) @_props_key
+                        (block_node
+                          (block_mapping
+                            (block_mapping_pair
+                              (flow_node) @_keyspec_key
+                              (_)
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @_section "Resources")
+            (#eq? @_type_key "Type")
+            (#eq? @_type_value "AWS::KMS::Key")
+            (#eq? @_props_key "Properties")
+            (#eq? @_keyspec_key "KeySpec")
+          )
+
+  rules:
+    - name: Missing EnableKeyRotation for symmetric KMS key (no explicit KeySpec)
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @_resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_props_key
+                      (block_node
+                        (block_mapping
+                          [
+                            (block_mapping_pair
+                              (flow_node) @key
+                              (_)
+                            )
+                            (comment)
+                          ]*
+                          (#not-eq? @key "EnableKeyRotation")
+                          (#not-eq? @key "KeySpec")
+                        )
+                      ) @properties
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::KMS::Key")
+          (#eq? @_props_key "Properties")
+        )
+      remediation:
+        - command: insert_after
+          path: properties
+          flags:
+            indent: "      "
+          value: |
+            EnableKeyRotation: true
+
+    - name: Missing EnableKeyRotation for symmetric KMS key (explicit SYMMETRIC_DEFAULT)
+      skip_finding: |
+        !any(flatten(collect(collections, "symmetric_keyspec_resources.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_props_key
+                      (block_node
+                        (block_mapping
+                          [
+                            (block_mapping_pair
+                              (flow_node) @key
+                              (_) @_val
+                            )
+                            (comment)
+                          ]*
+                          (#not-eq? @key "EnableKeyRotation")
+                        )
+                      ) @properties
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::KMS::Key")
+          (#eq? @_props_key "Properties")
+        )
+      remediation:
+        - command: insert_after
+          path: properties
+          flags:
+            indent: "      "
+          value: |
+            EnableKeyRotation: true
+
+    - name: Incorrect EnableKeyRotation value for symmetric KMS key (no explicit KeySpec)
+      skip_finding: |
+        any(flatten(collect(collections, "has_keyspec_resources.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_props_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_rotation_key
+                            (flow_node) @rotation_value
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::KMS::Key")
+          (#eq? @_props_key "Properties")
+          (#eq? @_rotation_key "EnableKeyRotation")
+          (#not-match? @rotation_value "(?i)^[\"']?(true|yes|on|1)[\"']?$")
+          (#not-match? @rotation_value "^!")
+        )
+      remediation:
+        - command: replace
+          path: rotation_value
+          value: "true"
+
+    - name: Incorrect EnableKeyRotation value for symmetric KMS key (explicit SYMMETRIC_DEFAULT)
+      skip_finding: |
+        !any(flatten(collect(collections, "symmetric_keyspec_resources.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_props_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_rotation_key
+                            (flow_node) @rotation_value
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::KMS::Key")
+          (#eq? @_props_key "Properties")
+          (#eq? @_rotation_key "EnableKeyRotation")
+          (#not-match? @rotation_value "(?i)^[\"']?(true|yes|on|1)[\"']?$")
+          (#not-match? @rotation_value "^!")
+        )
+      remediation:
+        - command: replace
+          path: rotation_value
+          value: "true"
+
+type: Ruleset
+version: v1

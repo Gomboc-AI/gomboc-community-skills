@@ -1,0 +1,347 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/cloudformation/aws/elasticsearch/elasticsearch-node-to-node-encryption
+  display_name: Ensure Elasticsearch node-to-node encryption is enabled
+  description: |
+    ## Description
+
+    Ensures that all AWS::Elasticsearch::Domain resources have node-to-node encryption enabled
+    by setting NodeToNodeEncryptionOptions.Enabled to true. Without this, inter-node traffic
+    within the cluster travels in plaintext, exposing sensitive indexed data to network-level interception.
+  classifications:
+    - gomboc-ai/policy/encryption/encryption_in_transit/enforce_encryption_in_transit
+    - gomboc-ai/cis/controls_8-1-2/3_data_protection/3-10_encrypt_sensitive_data_in_transit
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/visibility: "public"
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: AWS::Elasticsearch::Domain
+    gomboc-ai/reviewer/name: AI Assistant
+    gomboc-ai/reviewer/date: 2026-03-12
+    gomboc-ai/reviewer/status: valid
+    use-case-1: "git@github.com:Gomboc-AI/orl-rules.git;main;/cloudformation/aws/elasticsearch/elasticsearch-node-to-node-encryption"
+    gomboc-ai/example: |-
+      ```diff
+      Resources:
+        MyDomain:
+          Type: AWS::Elasticsearch::Domain
+          Properties:
+            DomainName: my-search-domain
+            ElasticsearchVersion: "7.10"
+      -     NodeToNodeEncryptionOptions:
+      -       Enabled: false
+      +     NodeToNodeEncryptionOptions:
+      +       Enabled: true
+
+        MyDomain2:
+          Type: AWS::Elasticsearch::Domain
+          Properties:
+            DomainName: my-search-domain-2
+            ElasticsearchVersion: "7.10"
+      +     NodeToNodeEncryptionOptions:
+      +       Enabled: true
+      ```
+    gomboc-ai/description-plain: "Ensures that Elasticsearch domain node-to-node encryption is enabled by setting NodeToNodeEncryptionOptions.Enabled to true, preventing plaintext inter-node traffic within the cluster."
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement-plain: "Without node-to-node encryption, data transmitted between Elasticsearch cluster nodes is in plaintext. An attacker with network access (e.g., via a compromised VPC or a rogue node) can intercept and read sensitive indexed data. This rule sets NodeToNodeEncryptionOptions.Enabled to true (inserting the block if absent), ensuring all inter-node traffic is TLS-encrypted."
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Without node-to-node encryption, data transmitted between Elasticsearch cluster nodes is in **plaintext**. An attacker with network access (e.g., via a compromised VPC or a rogue node) can intercept and read sensitive indexed data. This rule:
+      - Sets `NodeToNodeEncryptionOptions.Enabled: true` on domains with it explicitly disabled.
+      - Inserts the `NodeToNodeEncryptionOptions` block when absent or empty.
+
+      This ensures all inter-node traffic is TLS-encrypted, protecting data in transit within the cluster.
+
+    gomboc-ai/risk/score: medium
+    gomboc-ai/risk/statement-plain: "Enabling node-to-node encryption on an existing Elasticsearch domain triggers an AWS blue/green deployment. This may cause brief elevated latency or a short period of reduced capacity during the transition. No data loss occurs. Dollar cost is negligible (no additional charge for TLS). Performance tradeoff is minimal as TLS overhead on modern hardware is small. Domains running Elasticsearch versions older than 6.0 do not support this feature and will fail to update (Integration failure)."
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      Enabling node-to-node encryption on an **existing** Elasticsearch domain triggers an AWS **blue/green deployment**:
+      - **Unexpected downtime:** Brief elevated latency or reduced capacity during the blue/green transition; full outages are uncommon but possible.
+      - **Data loss:** None — the domain data is preserved across the blue/green swap.
+      - **Dollar cost:** Negligible — no additional AWS charge for enabling TLS.
+      - **Performance tradeoffs:** Minimal — TLS overhead on modern hardware is small.
+      - **Integration failure:** Domains on Elasticsearch versions older than 6.0 do not support node-to-node encryption; applying this change will fail for those domains.
+spec:
+  template:
+    language: cloudformation-yaml
+    audit_language: ast
+    collect:
+      - name: es_domain_resources
+        audit: |
+          (block_mapping_pair
+            (flow_node) @_section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @_type_key
+                        (flow_node) @_type_value
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @_section "Resources")
+            (#eq? @_type_key "Type")
+            (#eq? @_type_value "AWS::Elasticsearch::Domain")
+          )
+      - name: has_n2n_key
+        audit: |
+          (block_mapping_pair
+            (flow_node) @_section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @_properties_key
+                        (block_node
+                          (block_mapping
+                            (block_mapping_pair
+                              (flow_node) @_n2n_key
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @_section "Resources")
+            (#eq? @_properties_key "Properties")
+            (#eq? @_n2n_key "NodeToNodeEncryptionOptions")
+          )
+
+  rules:
+    - name: Missing NodeToNodeEncryptionOptions block
+      skip_finding: |
+        !any(flatten(collect(collections, "es_domain_resources.*")), { #.name == $.resource_name }) ||
+        any(flatten(collect(collections, "has_n2n_key.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          [
+                            (block_mapping_pair
+                              (flow_node) @key
+                              (_) @value
+                            )
+                            (comment)
+                          ]*
+                          (#not-eq? @key "NodeToNodeEncryptionOptions")
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_properties_key "Properties")
+        )
+      remediation:
+        - command: insert_after
+          path: value
+          flags:
+            indent: "      "
+          value: |
+            NodeToNodeEncryptionOptions:
+              Enabled: true
+
+    - name: Missing Enabled in NodeToNodeEncryptionOptions block
+      skip_finding: |
+        !any(flatten(collect(collections, "es_domain_resources.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_n2n_key
+                            (block_node
+                              (block_mapping
+                                [
+                                  (block_mapping_pair
+                                    (flow_node) @key
+                                    (_) @value
+                                  )
+                                  (comment)
+                                ]*
+                                (#not-eq? @key "Enabled")
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_properties_key "Properties")
+          (#eq? @_n2n_key "NodeToNodeEncryptionOptions")
+        )
+      remediation:
+        - command: insert_after
+          path: value
+          flags:
+            indent: "        "
+          value: "Enabled: true"
+
+    - name: Enabled is explicitly falsy in NodeToNodeEncryptionOptions
+      skip_finding: |
+        !any(flatten(collect(collections, "es_domain_resources.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_n2n_key
+                            (block_node
+                              (block_mapping
+                                (block_mapping_pair
+                                  (flow_node) @_enabled_key
+                                  (flow_node) @enabled_value
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_properties_key "Properties")
+          (#eq? @_n2n_key "NodeToNodeEncryptionOptions")
+          (#eq? @_enabled_key "Enabled")
+          (#not-match? @enabled_value "^(!.*|true|True|TRUE|yes|Yes|YES|y|Y|1|on|On|ON|\"true\"|\"True\"|\"TRUE\"|\"yes\"|\"Yes\"|\"YES\"|\"y\"|\"Y\"|\"on\"|\"On\"|\"ON\"|\"1\"|'true'|'True'|'TRUE'|'yes'|'Yes'|'YES'|'y'|'Y'|'on'|'On'|'ON'|'1')$")
+        )
+      remediation:
+        - command: replace
+          path: enabled_value
+          value: "true"
+
+    - name: NodeToNodeEncryptionOptions is an empty flow mapping
+      skip_finding: |
+        !any(flatten(collect(collections, "es_domain_resources.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_n2n_key
+                            (flow_node
+                              (flow_mapping) @_flow_map
+                            )
+                          ) @n2n_empty_pair
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_properties_key "Properties")
+          (#eq? @_n2n_key "NodeToNodeEncryptionOptions")
+        )
+      remediation:
+        - command: replace
+          path: n2n_empty_pair
+          value: "NodeToNodeEncryptionOptions:\n        Enabled: true"
+
+    - name: NodeToNodeEncryptionOptions is present with null value
+      skip_finding: |
+        !any(flatten(collect(collections, "es_domain_resources.*")), { #.name == $.resource_name })
+      audit: |
+        (
+          (block_mapping_pair
+            (flow_node) @_section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @resource_name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @_properties_key
+                        (block_node
+                          (block_mapping
+                            (block_mapping_pair
+                              (flow_node) @_n2n_key
+                            ) @n2n_null_pair
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_properties_key "Properties")
+          (#eq? @_n2n_key "NodeToNodeEncryptionOptions")
+          (#match? @n2n_null_pair "^NodeToNodeEncryptionOptions:[ \t]*$")
+        )
+      remediation:
+        - command: replace
+          path: n2n_null_pair
+          value: "NodeToNodeEncryptionOptions:\n        Enabled: true"

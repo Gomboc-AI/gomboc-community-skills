@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/provider: Azure
+    gomboc-ai/resource: Microsoft.Storage/storageAccounts
+    gomboc-ai/description-plain: "Ensure Azure Storage Account requires HTTPS traffic only."
+  classifications:
+    - gomboc-ai/policy/encryption/encryption_in_transit/enforce_ssl
+  description: |
+    ## Description
+
+    Ensures that Azure Storage Accounts require HTTPS traffic only by setting supportsHttpsTrafficOnly to true.
+  display_name: Ensure Storage Account HTTPS Only
+  name: gomboc-ai/ensure_storage_account_https_only
+spec:
+  template:
+    language: bicep
+    audit_language: ast
+
+  rules:
+    - name: supportsHttpsTrafficOnly-explicitly-false
+      audit: |
+        (resource_declaration
+          (string
+            (string_content) @_type
+          )
+          (object
+            (object_property
+              (identifier) @_props_key
+              (object
+                (object_property
+                  (identifier) @_prop_key
+                  (boolean) @value
+                )
+              )
+            )
+          )
+          (#match? @_type "Microsoft\\.Storage/storageAccounts")
+          (#eq? @_props_key "properties")
+          (#eq? @_prop_key "supportsHttpsTrafficOnly")
+          (#eq? @value "false")
+        )
+      remediation:
+        - command: replace
+          path: value
+          value: "true"
+type: Ruleset
+version: v1

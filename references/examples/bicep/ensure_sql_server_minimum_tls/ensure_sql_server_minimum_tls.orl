@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/provider: Azure
+    gomboc-ai/resource: Microsoft.Sql/servers
+    gomboc-ai/description-plain: "Ensure Azure SQL Server enforces minimum TLS version 1.2."
+  classifications:
+    - gomboc-ai/policy/encryption/encryption_in_transit/enforce_ssl
+  description: |
+    ## Description
+
+    Ensures that Azure SQL Servers enforce TLS 1.2 as the minimum version by setting minimalTlsVersion to 1.2.
+  display_name: Ensure SQL Server Minimum TLS 1.2
+  name: gomboc-ai/ensure_sql_server_minimum_tls
+spec:
+  template:
+    language: bicep
+    audit_language: ast
+
+  rules:
+    - name: minimalTlsVersion-below-1-2
+      audit: |
+        (resource_declaration
+          (string
+            (string_content) @_type
+          )
+          (object
+            (object_property
+              (identifier) @_props_key
+              (object
+                (object_property
+                  (identifier) @_prop_key
+                  (string
+                    (string_content) @value
+                  )
+                )
+              )
+            )
+          )
+          (#match? @_type "Microsoft\\.Sql/servers")
+          (#eq? @_props_key "properties")
+          (#eq? @_prop_key "minimalTlsVersion")
+          (#match? @value "^(1\\.0|1\\.1|0)$")
+        )
+      remediation:
+        - command: replace
+          path: value
+          value: "1.2"
+type: Ruleset
+version: v1

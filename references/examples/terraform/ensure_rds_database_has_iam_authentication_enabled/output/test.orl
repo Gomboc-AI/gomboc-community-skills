@@ -1,0 +1,14 @@
+type: Test
+version: v1
+metadata:
+  name: generated-test
+  priority: 1
+spec:
+  rulespace: ./rules
+  cases:
+  - name: tests
+    language: terraform
+    workspace:
+      path: ./workspace
+    remediated_workspace:
+      path: ./expected

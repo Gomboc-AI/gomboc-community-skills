@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+metadata:
+    annotations:
+        contributed-by: gomboc-ai
+        gomboc-ai/reviewer/name: Zach Talarick
+        gomboc-ai/reviewer/date: 2025-10-31
+        gomboc-ai/reviewer/status: valid
+        gomboc-ai/visibility: public
+        gomboc-ai/public-rule-bodies: "true"
+        gomboc-ai/provider: AWS
+        gomboc-ai/resource: aws_db_instance
+        use-case-1: git@github.com:Gomboc-AI/orl-rules.git;main;/rules/terraform/aws/aws_db_instance/gomboc-ai/ensure-all-data-stored-in-rds-is-not-publicly-accessible
+
+        gomboc-ai/configoption/capability/id: b8b6d7f9-62fe-4a5c-90bd-03950ba59d30
+        gomboc-ai/configoption/capability/timestamp: "2025-03-17 19:44:53.019181"
+        gomboc-ai/configoption/capability/title: Gomboc Best Practices (NIST 2.0.0 (AWS)) 26
+        gomboc-ai/configoption/capability/updated-by: data_eng@gomboc.ai
+        gomboc-ai/configoption/code-fix-id: a3a31e2d13f96690d3680e9e8f122f4d1d00bde571ebf287661484a9f85a7a75
+        gomboc-ai/configoption/code-resource-id: hashicorp/aws.resources.aws_db_instance
+        gomboc-ai/configoption/graph: |-
+            ```mermaid
+            flowchart TD
+              S0(hashicorp/aws.resources.aws_db_instance)
+              T0(hashicorp/aws.resources.aws_db_instance.publicly_accessible)
+              T1(Capability)
+              S0 -->|HasArgument| T0
+              T0 -->|"ImplementsIfEqualTo FALSE"| T1
+            ```
+        gomboc-ai/configoption/graph-path: /hashicorp/aws.resources.aws_db_instance/hashicorp/aws.resources.aws_db_instance.publicly_accessible
+        gomboc-ai/configoption/id: ""
+        gomboc-ai/configoption/resource-key: TfResourceSchemaDefinition:hashicorp/aws.resources.aws_db_instance
+        
+        gomboc-ai/chekov/date: 2025-11-10
+        gomboc-ai/chekov/id: "CKV_AWS_17"
+        gomboc-ai/chekov/name: Ensure all data stored in RDS is not publicly accessible
+        
+        gomboc-ai/example: |-
+          ```diff
+          resource "aws_db_instance" "example" {
+            identifier          = "example-db"
+            engine              = "mysql"
+            engine_version      = "8.0"
+            instance_class      = "db.t3.micro"
+            allocated_storage   = 20
+            db_name             = "exampledb"
+            username            = "admin"
+            password            = "SecurePassword123!"
+          - publicly_accessible = true
+          + publicly_accessible = false
+          }
+          ```
+        gomboc-ai/impact/score: high
+        gomboc-ai/impact/statement-plain: "Configuring the RDS instance to deny public access restricts database traffic to within the VPC. This significantly reduces the attack surface by preventing direct access from the public internet, mitigating risks associated with brute-force attacks and unauthorized data exfiltration."
+        gomboc-ai/impact/statement: |
+          ## Impact
+
+          **Security Hardening**
+          Configuring the RDS instance to deny public access restricts database traffic to within the VPC. This significantly reduces the attack surface by preventing direct access from the public internet, mitigating risks associated with:
+
+          * Brute-force credential attacks.
+          * Unauthorized data exfiltration.
+          * Exploitation of unpatched database vulnerabilities.
+
+          
+
+        gomboc-ai/risk/score: medium
+        gomboc-ai/risk/statement-plain: "Setting publicly_accessible to false will immediately sever connectivity for any clients connecting from outside the VPC (such as local developer machines, CI/CD runners, or external SaaS tools) that do not use a VPN or Bastion host. This constitutes an Integration Failure risk."
+        gomboc-ai/risk/statement: |
+          ## Risk
+
+          **Integration Failure & Connectivity Loss**
+          Setting `publicly_accessible` to `false` will immediately sever connectivity for any clients attempting to connect from outside the VPC.
+
+          * **External Clients:** Applications, reporting tools, or SaaS integrations hosted outside the AWS VPC will lose access.
+          * **Developer Access:** Developers connecting from local machines without a VPN, Direct Connect, or Bastion host will be unable to reach the database.
+
+          This change is an in-place update and typically does not require resource recreation, but existing external connections will drop immediately.
+
+        gomboc-ai/description-plain: "Ensure AWS DB instances are not publicly accessible."
+        
+    description: |
+      ## Description
+
+      Ensures that AWS DB instances are not publicly accessible.
+    classifications:
+        - gomboc-ai/policy/secure_networking/prevent_public_access_via_explicit_setting
+        - gomboc-ai/cis/controls_8-1-2/12_network_infrastructure_management/12-2_establish_and_maintain_a_secure_network_architecture
+    name: gomboc-ai/ensure_aws_db_instance_is_not_publicly_accessible
+    display_name: Ensure AWS DB Instance is not Publicly Accessible
+    priority: 1400000
+    skip: false
+spec:
+    template:
+        language: terraform
+        audit_language: ast
+    rules:
+        - name: ensure-aws-db-instance-is-not-publicly-accessible
+          audit: |
+            {{ aResource("aws_db_instance", anAttributeValueEq("publicly_accessible", "true")) }}
+          remediation:
+            - command: "replace"
+              path: "value"
+              value: "false"
+
+        # By default `publicly_accessible = false` if the db_subnet_group_name is not "default"
+        # See "PubliclyAccessible" in https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+        # "If DBSubnetGroup is specified, PubliclyAccessible defaults to false unless the value of DBSubnetGroup is default, in which case PubliclyAccessible defaults to true."
+        # Its best to just explicitly set `publicly_accessible = false`
+        - name: ensure-that-publicly_accessible-is-false-when-it-is-missing
+          audit: |
+            {{ aResource("aws_db_instance", aMissingAttribute("publicly_accessible")) }}
+          
+          remediation:
+            - command: insert_after
+              path: body
+              flags:
+                prefix: "\n\n"
+                indent: "  "
+              value: |
+                publicly_accessible = false
+type: Ruleset
+version: v1

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Gomboc-AI/orl/lib/lang/rulespace/rule",
+  "$ref": "#/$defs/Rule",
+  "$defs": {
+    "Collect": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "audit": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "audit"
+      ]
+    },
+    "Metadata": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "skip": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "description": {
+          "type": "string"
+        },
+        "required_contexts": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "annotations": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "classifications": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ]
+    },
+    "Remediation": {
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "skip": {
+          "type": "string"
+        },
+        "invert_skip": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        },
+        "flags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "command"
+      ]
+    },
+    "Rule": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Rule",
+            "Test",
+            "Ruleset",
+            "Context",
+            "Variables",
+            "Report"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "enum": [
+            "v1"
+          ]
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/RuleSpec"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "version",
+        "metadata",
+        "spec"
+      ]
+    },
+    "RuleSpec": {
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "audit_language": {
+          "type": "string"
+        },
+        "variables": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "collect": {
+          "items": {
+            "$ref": "#/$defs/Collect"
+          },
+          "type": "array"
+        },
+        "audit": {
+          "type": "string"
+        },
+        "skip_finding": {
+          "type": "string"
+        },
+        "foreach": {
+          "type": "string"
+        },
+        "remediation": {
+          "items": {
+            "$ref": "#/$defs/Remediation"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "language",
+        "audit",
+        "remediation"
+      ]
+    }
+  }
+}

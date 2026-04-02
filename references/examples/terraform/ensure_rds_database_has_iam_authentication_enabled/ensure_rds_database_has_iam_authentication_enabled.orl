@@ -1,0 +1,140 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    use-case-1: git@github.com:Gomboc-AI/orl-rules.git;main;/rules/terraform/aws/aws_db_instance/gomboc-ai/ensure-rds-database-has-iam-authentication-enabled
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+
+    gomboc-ai/reviewer/name: Zach Talarick
+    gomboc-ai/reviewer/status: valid
+    gomboc-ai/reviewer/date: 2026-01-22
+
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: aws_db_instance
+    gomboc-ai/source: checkov
+
+    gomboc-ai/checkov/date: 2025-11-10
+    gomboc-ai/checkov/id: "CKV_AWS_161"
+    gomboc-ai/checkov/name: Ensure RDS database has IAM authentication enabled
+
+    gomboc-ai/risk/score: low
+    gomboc-ai/risk/statement-plain: "Enabling IAM database authentication is a non-destructive change that can be applied in-place without downtime. However, existing applications using traditional username/password authentication will continue to work alongside IAM authentication. The main operational risk is ensuring IAM policies and database user mappings are correctly configured to avoid authentication failures for applications transitioning to IAM authentication."
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      **Configuration Complexity & Authentication Failures**
+      Enabling IAM database authentication is a non-destructive change that can be applied in-place without downtime or resource recreation.
+
+      * **Dual Authentication:** Traditional username/password authentication continues to work alongside IAM authentication, allowing gradual migration.
+      * **IAM Policy Requirements:** Applications must have proper IAM policies granting `rds-db:connect` permission with the correct resource ARN format.
+
+      The primary risk is misconfiguration leading to authentication failures for applications attempting to use IAM authentication, which may require troubleshooting and policy adjustments.
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement-plain: "IAM database authentication eliminates the need to store database passwords in application code or configuration files, reducing the risk of credential exposure. It provides centralized access control through IAM policies, enables credential rotation without application changes, and supports compliance requirements for strong authentication mechanisms."
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      **Enhanced Security & Centralized Access Control**
+      Enabling IAM database authentication provides significant security improvements:
+
+      * **Credential Elimination:** Removes the need to store database passwords in application code, environment variables, or configuration files, reducing credential exposure risk.
+      * **Centralized Management:** Access control is managed through IAM policies, enabling centralized auditing and policy enforcement.
+      * **Credential Rotation:** IAM credentials can be rotated without modifying application code or database user passwords.
+
+      This change significantly improves the security posture by reducing the attack surface associated with password-based authentication.
+
+    gomboc-ai/example: |
+      ```diff
+      resource "aws_db_instance" "example" {
+        # ...
+      - iam_database_authentication_enabled = false
+      + iam_database_authentication_enabled = true
+      }
+      
+      resource "aws_db_instance" "example" {
+        # ...
+
+      + iam_database_authentication_enabled = true
+      }
+      ```    
+
+    gomboc-ai/description-plain: "Ensure RDS database instances have IAM database authentication enabled."
+  priority: 1400500
+  classifications:
+    - gomboc-ai/policy/authentication/client_authentication_via_iam_sigv4
+    - gomboc-ai/cis/controls_8-1-2/6_access_control_management/6-7_centralize_access_control
+  name: gomboc-ai/ensure-rds-database-has-iam-authentication-enabled
+  display_name: Ensure RDS database has IAM authentication enabled
+  description: |
+    ## Description
+
+    Ensures that AWS RDS database instances have IAM database authentication enabled by setting the `iam_database_authentication_enabled` attribute to `true`. This enables authentication using IAM credentials instead of traditional username/password, providing centralized access control and eliminating the need to store database passwords in application code.
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+    collect:
+      - name: engine
+        audit: |
+          {{ aResource("aws_db_instance", anAttribute("engine")) }}
+      - name: engine_version
+        audit: |
+          {{ aResource("aws_db_instance", anAttribute("engine_version")) }}
+  rules:
+
+    - name: ensure-that-iam_database_authentication_enabled-is-true-when-it-is-explicitly-wrong
+      
+      # IAM authentication is only supported for MySQL, PostgreSQL >= 10.0.0, and MariaDB >= 10.6.5
+      # MySQL does not use semVer for versioning, so we cannot check it
+      skip_finding: |
+        let engine = trim(first(filter(flatten(collect(collections, "engine.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+        let version = trim(first(filter(flatten(collect(collections, "engine_version.*")), { #.name == finding.name }))?.value ?? "\"0.0.0\"", "\"");
+        
+        let is_invalid_engine = engine != "mysql" && engine != "postgres" && engine != "mariadb";
+
+        let is_invalid_mariadb_version = engine == "mariadb" and semVerCmp(version, "<", "10.6.5");
+        let is_invalid_postgres_version = engine == "postgres" and semVerCmp(version, "<", "10.0.0");
+
+        let is_invalid_version = is_invalid_mariadb_version or is_invalid_postgres_version;
+
+        is_invalid_engine or is_invalid_version
+
+      audit: |
+        {{ aResource("aws_db_instance", anAttributeValueNotEq("iam_database_authentication_enabled", "true")) }}
+      remediation:
+        - command: replace
+          path: value
+          value: "true"
+
+    - name: ensure-that-iam_database_authentication_enabled-is-true-when-it-is-missing
+      
+      # IAM authentication is only supported for MySQL, PostgreSQL >= 10.0.0, and MariaDB >= 10.6.5
+      # MySQL does not use semVer for versioning, so we cannot check it
+      skip_finding: |
+        let engine = trim(first(filter(flatten(collect(collections, "engine.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+        let version = trim(first(filter(flatten(collect(collections, "engine_version.*")), { #.name == finding.name }))?.value ?? "\"0.0.0\"", "\"");
+        
+        let is_invalid_engine = engine != "mysql" && engine != "postgres" && engine != "mariadb";
+
+        let is_invalid_mariadb_version = engine == "mariadb" and semVerCmp(version, "<", "10.6.5");
+        let is_invalid_postgres_version = engine == "postgres" and semVerCmp(version, "<", "10.0.0");
+
+        let is_invalid_version = is_invalid_mariadb_version or is_invalid_postgres_version;
+
+        is_invalid_engine or is_invalid_version
+
+      audit: |
+        {{ aResource("aws_db_instance", aMissingAttribute("iam_database_authentication_enabled")) }}
+      remediation:
+        - command: insert_after
+          path: body
+          flags:
+            indent: "  "
+            prefix: "\n\n"
+          value: |
+            iam_database_authentication_enabled = true

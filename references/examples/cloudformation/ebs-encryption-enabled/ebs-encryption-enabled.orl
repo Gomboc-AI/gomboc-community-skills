@@ -1,0 +1,160 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/cloudformation-yaml/aws/aws--ec2--volume/ebs-encryption-enabled
+  display_name: Ensure EBS volumes are encrypted at rest for AWS::EC2::Volume
+  description: |
+    ## Description
+
+    Ensures that all EBS volumes have the `Encrypted` property set to `true`.
+    When omitted or set to a falsy value, EBS volumes are created unencrypted,
+    exposing data at rest to potential unauthorized access.
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/visibility: "public"
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: AWS::EC2::Volume
+    gomboc-ai/reviewer/name: AI Assistant
+    gomboc-ai/reviewer/date: 2026-03-12
+    gomboc-ai/reviewer/status: valid
+    use-case-1: "git@github.com:Gomboc-AI/orl-rules.git;main;/cloudformation/aws/ec2/volume/ebs-encryption-enabled"
+    gomboc-ai/example: |-
+      ```diff
+      Resources:
+        MyVolume:
+          Type: AWS::EC2::Volume
+          Properties:
+            AvailabilityZone: us-east-1a
+            Size: 100
+      -     Encrypted: false
+      +     Encrypted: true
+
+        MyVolume2:
+          Type: AWS::EC2::Volume
+          Properties:
+            AvailabilityZone: us-east-1a
+      +     Encrypted: true
+      ```
+    gomboc-ai/description-plain: "Ensures that AWS EBS volumes have encryption at rest enabled by setting the Encrypted property to true, protecting data from unauthorized access if the underlying storage is compromised."
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement-plain: "Unencrypted EBS volumes store data in plaintext, exposing sensitive information to unauthorized access if the underlying storage media is compromised or improperly decommissioned. This rule sets the Encrypted property to true (or inserts it when absent), ensuring data at rest is protected using AWS-managed encryption keys."
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Unencrypted EBS volumes store data in plaintext, exposing sensitive information to unauthorized access if the underlying storage media is compromised or improperly decommissioned. This rule:
+      - Sets `Encrypted: true` on volumes with a falsy value.
+      - Inserts `Encrypted: true` when the property is entirely absent.
+
+      This ensures data at rest is protected using AWS-managed encryption keys, satisfying compliance requirements (PCI-DSS, HIPAA, SOC 2).
+
+    gomboc-ai/risk/score: high
+    gomboc-ai/risk/statement-plain: "Enabling encryption on an existing EBS volume requires resource replacement — CloudFormation will delete and recreate the volume. This causes data loss (existing volume contents are not automatically migrated), unexpected downtime for any EC2 instances attached to the volume, and requires a manual data migration process. No significant dollar cost increase is expected from encryption itself."
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      Enabling encryption on an **existing** EBS volume triggers a **resource replacement** in CloudFormation:
+      - **Data loss:** The existing volume is deleted and recreated empty — existing data is **not** automatically migrated and must be manually copied before applying the change.
+      - **Unexpected downtime:** Any EC2 instances attached to the volume will lose their block device during replacement, causing interruption.
+      - **Dollar cost:** Negligible — AWS EBS encryption has no additional cost.
+      - **Performance tradeoffs:** Minimal — AES-256 encryption is handled transparently by the hardware.
+  classifications:
+    - gomboc-ai/policy/encryption/encryption_at_rest/encryption_at_rest_with_provider_managed_key
+    - gomboc-ai/cis/controls_8-1-2/3_data_protection/3-11_encrypt_sensitive_data_at_rest
+    - gomboc-ai/prismacloud/CKV_AWS_3
+spec:
+  template:
+    language: cloudformation-yaml
+    audit_language: ast
+  rules:
+    - name: ensure-ebs-encryption-when-missing
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @_resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          [
+                            (block_mapping_pair
+                              (flow_node) @key
+                              (_) @value
+                            )
+                            (comment)
+                          ]*
+                          (#not-eq? @key "Encrypted")
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::EC2::Volume")
+          (#eq? @_properties_key "Properties")
+        )
+      remediation:
+        - command: insert_after
+          path: value
+          flags:
+            indent: "      "
+          value: |
+            Encrypted: true
+
+    - name: ensure-ebs-encryption-when-explicitly-false
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @_resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_encrypted_key
+                            (flow_node) @encrypted_value
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::EC2::Volume")
+          (#eq? @_properties_key "Properties")
+          (#eq? @_encrypted_key "Encrypted")
+          (#not-match? @encrypted_value "^[^A-Za-z0-9]?(true|True|TRUE|yes|Yes|YES|on|On|ON|y|Y|1)[^A-Za-z0-9]?$")
+          (#not-match? @encrypted_value "^!")
+        )
+      remediation:
+        - command: replace
+          path: encrypted_value
+          value: "true"

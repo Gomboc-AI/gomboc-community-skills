@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/rule.json
+---
+metadata:
+    annotations:
+        gomboc-ai/configoption/capability/id: 42d62950-4247-407d-96b6-6e7c449847a1
+        gomboc-ai/configoption/capability/timestamp: "2023-05-25T19:21:18Z"
+        gomboc-ai/configoption/capability/title: Prevent Public Access via Explicit Setting
+        gomboc-ai/configoption/capability/updated-by: jonathan@gomboc.ai
+        gomboc-ai/configoption/code-fix-id: a3a31e2d13f96690d3680e9e8f122f4d1d00bde571ebf287661484a9f85a7a75
+        gomboc-ai/configoption/code-resource-id: hashicorp/aws.resources.aws_db_instance
+        gomboc-ai/configoption/graph: |-
+            ```mermaid
+            flowchart TD
+              S0(hashicorp/aws.resources.aws_db_instance)
+              T0(hashicorp/aws.resources.aws_db_instance.publicly_accessible)
+              T1(Capability)
+              S0 -->|HasArgument| T0
+              T0 -->|"ImplementsIfEqualTo FALSE"| T1
+            ```
+        gomboc-ai/configoption/graph-path: /hashicorp/aws.resources.aws_db_instance/hashicorp/aws.resources.aws_db_instance.publicly_accessible
+        gomboc-ai/configoption/id: ""
+        gomboc-ai/configoption/resource-key: TfResourceSchemaDefinition:hashicorp/aws.resources.aws_db_instance
+    description: Prevent Public Access via Explicit Setting
+    name: Prevent Public Access via Explicit Setting for hashicorp/aws.resources.aws_db_instance
+    priority: 1400500
+    skip: true
+spec:
+    audit: ""
+    audit_language: ast
+    language: terraform
+    remediation: []
+type: Rule
+version: v1

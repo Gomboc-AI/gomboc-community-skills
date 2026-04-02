@@ -1,0 +1,20 @@
+---
+type: Test
+version: v1
+metadata:
+  name: Test
+  priority: 100
+spec:
+  rulespace: .
+  cases:
+    - name: Test
+      language: cloudformation-yaml
+      workspace:
+        path: .
+      remediated_workspace:
+        path: ./expected
+      expected_report:
+        rules_applied: 2
+        findings: 2
+        fixes: 2
+        errors: []

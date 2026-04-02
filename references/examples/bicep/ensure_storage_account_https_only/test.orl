@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: ensure_storage_account_https_only
+spec:
+  rulespace: "."
+  cases:
+    - name: Ensure Storage Account HTTPS Only
+      language: bicep
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./workspace_expected
+      expected_report:
+        rules_applied: 1
+        findings: 1
+        fixes: 1
+        changes: 1
+        errors: []

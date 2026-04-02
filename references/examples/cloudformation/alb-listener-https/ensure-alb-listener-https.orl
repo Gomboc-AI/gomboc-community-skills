@@ -1,0 +1,267 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/visibility: "public"
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: AWS::ElasticLoadBalancingV2::Listener
+    gomboc-ai/reviewer/name: Zach Talarick
+    gomboc-ai/reviewer/date: 2026-03-12
+    gomboc-ai/reviewer/status: valid
+    use-case-1: "git@github.com:Gomboc-AI/orl-rules.git;main;/rules/cloudformation/AWS_ElasticLoadBalancingV2_Listener/ensure-alb-protocol-is-https"
+    gomboc-ai/example: |-
+      ```diff
+      Resources:
+        MyListener:
+          Type: AWS::ElasticLoadBalancingV2::Listener
+          Properties:
+            LoadBalancerArn: !Ref MyALB
+            Port: 80
+      -     Protocol: HTTP
+      +     Protocol: HTTPS
+            DefaultActions:
+              - Type: forward
+                TargetGroupArn: !Ref MyTargetGroup
+      ```
+    gomboc-ai/description-plain: "Ensures that AWS ALB listeners use HTTPS protocol to encrypt traffic in transit, replacing HTTP with HTTPS or adding Protocol: HTTPS when missing."
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement-plain: "ALB listeners configured with HTTP transmit traffic in plaintext, exposing sensitive data (credentials, tokens, PII) to interception. This rule sets the Protocol to HTTPS, ensuring all listener traffic is encrypted in transit and protecting users from man-in-the-middle attacks."
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      ALB listeners configured with **HTTP** transmit traffic in plaintext, exposing sensitive data (credentials, tokens, PII) to interception. This rule:
+      - Sets the `Protocol` to `HTTPS` on listeners using `HTTP` without a redirect-to-HTTPS action.
+      - Inserts `Protocol: HTTPS` when the property is entirely absent.
+
+      This ensures all listener traffic is encrypted in transit and protects users from man-in-the-middle attacks.
+
+    gomboc-ai/risk/score: medium
+    gomboc-ai/risk/statement-plain: "Changing the listener Protocol from HTTP to HTTPS requires a valid SSL/TLS certificate ARN (Certificates property) and a secure security policy to be configured on the listener. If these are absent, the stack update will fail (Integration failure). Existing HTTP clients that do not support TLS may experience connection failures (Unexpected downtime). No dollar cost increase is expected beyond certificate management, and no resource recreation or data loss occurs as listeners are updated in-place."
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      Changing the listener `Protocol` from `HTTP` to `HTTPS` requires a valid SSL/TLS certificate ARN (`Certificates` property) and a secure security policy to be configured on the listener:
+      - **Integration failure:** If `Certificates` is absent or invalid, the CloudFormation stack update will fail.
+      - **Unexpected downtime:** Existing HTTP-only clients that do not support TLS may experience connection failures after the change.
+      - **Dollar cost:** Minimal — ACM certificates are free, but third-party certificates incur cost.
+      - **Resource recreation or data loss:** None — ALB listeners are updated in-place.
+  classifications:
+    - gomboc-ai/policy/encryption/encryption_in_transit/https
+    - gomboc-ai/policy/encryption/encryption_in_transit/enforce_encryption_in_transit
+  description: |
+    ## Description
+
+    Ensures that AWS ALB (Application Load Balancer) listeners use HTTPS protocol
+    to encrypt traffic in transit. HTTP listeners without a redirect-to-HTTPS
+    action are flagged and remediated by setting Protocol to HTTPS.
+  display_name: Ensure ALB protocol is HTTPS for AWS::ElasticLoadBalancingV2::Listener
+  name: gomboc-ai/cloudformation/aws/elasticloadbalancingv2/listener/ensure-alb-protocol-is-https
+spec:
+  template:
+    language: cloudformation-yaml
+    audit_language: ast
+    collect:
+      - name: redirect_https_action
+        audit: |
+          (block_mapping_pair
+            (flow_node) @_section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @_type_key
+                        (flow_node) @_type_value
+                      )
+                      (block_mapping_pair
+                        (flow_node) @_props_key
+                        (block_node
+                          (block_mapping
+                            (block_mapping_pair
+                              (flow_node) @_da_key
+                              (block_node
+                                (block_sequence
+                                  (block_sequence_item
+                                    (block_node
+                                      (block_mapping
+                                        (block_mapping_pair
+                                          (flow_node) @_action_type_key
+                                          (flow_node) @_action_type_value
+                                        )
+                                        (block_mapping_pair
+                                          (flow_node) @_redirect_cfg_key
+                                          (block_node
+                                            (block_mapping
+                                              (block_mapping_pair
+                                                (flow_node) @_protocol_key
+                                                (flow_node) @value
+                                              )
+                                            )
+                                          )
+                                        )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @_section "Resources")
+            (#eq? @_type_key "Type")
+            (#eq? @_type_value "AWS::ElasticLoadBalancingV2::Listener")
+            (#eq? @_props_key "Properties")
+            (#eq? @_da_key "DefaultActions")
+            (#eq? @_action_type_key "Type")
+            (#match? @_action_type_value "^[\"']?redirect[\"']?$")
+            (#eq? @_redirect_cfg_key "RedirectConfig")
+            (#eq? @_protocol_key "Protocol")
+            (#match? @value "^[\"']?HTTPS[\"']?$")
+          )
+      - name: dynamic_default_actions
+        audit: |
+          (block_mapping_pair
+            (flow_node) @_section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @_type_key
+                        (flow_node) @_type_value
+                      )
+                      (block_mapping_pair
+                        (flow_node) @_props_key
+                        (block_node
+                          (block_mapping
+                            (block_mapping_pair
+                              (flow_node) @_da_key
+                              [
+                                (flow_node (tag))
+                                (block_node (block_mapping))
+                              ] @value
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @_section "Resources")
+            (#eq? @_type_key "Type")
+            (#eq? @_type_value "AWS::ElasticLoadBalancingV2::Listener")
+            (#eq? @_props_key "Properties")
+            (#eq? @_da_key "DefaultActions")
+          )
+
+  rules:
+    - name: Protocol is explicitly HTTP
+      skip_finding: |
+        any(flatten(collect(collections, "redirect_https_action.*")), { #.name == $.resource_name }) ||
+        any(flatten(collect(collections, "dynamic_default_actions.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_props_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_protocol_key
+                            (flow_node) @protocol_value
+                          )
+                        )
+                      ) @_properties
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::ElasticLoadBalancingV2::Listener")
+          (#eq? @_props_key "Properties")
+          (#eq? @_protocol_key "Protocol")
+          (#match? @protocol_value "^[\"']?HTTP[\"']?$")
+        )
+      remediation:
+        - command: replace
+          path: protocol_value
+          value: HTTPS
+
+    - name: Protocol is missing
+      skip_finding: |
+        any(flatten(collect(collections, "dynamic_default_actions.*")), { #.name == $.resource_name })
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_type_key
+                      (flow_node) @_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_props_key
+                      (block_node
+                        (block_mapping
+                          [
+                            (block_mapping_pair
+                              (flow_node) @key
+                              (_) @value
+                            )
+                            (comment)
+                          ]*
+                          (#not-eq? @key "Protocol")
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_type_key "Type")
+          (#eq? @_type_value "AWS::ElasticLoadBalancingV2::Listener")
+          (#eq? @_props_key "Properties")
+        )
+      remediation:
+        - command: insert_after
+          path: value
+          flags:
+            indent: "      "
+          value: |
+            Protocol: HTTPS
+
+type: Ruleset
+version: v1

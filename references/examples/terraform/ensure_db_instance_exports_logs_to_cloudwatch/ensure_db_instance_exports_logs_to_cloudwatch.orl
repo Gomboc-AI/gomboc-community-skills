@@ -1,0 +1,253 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    use-case-1: git@github.com:Gomboc-AI/orl-rules.git;main;/rules/terraform/aws/aws_db_instance/gomboc-ai/ensure-db-instance-exports-logs-to-cloudwatch
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+
+    gomboc-ai/reviewer/name: Zach Talarick
+    gomboc-ai/reviewer/status: valid
+    gomboc-ai/reviewer/date: 2026-01-26
+
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: aws_db_instance
+    gomboc-ai/source: checkov
+
+    gomboc-ai/checkov/date: 2025-11-10
+    gomboc-ai/checkov/id: "CKV_AWS_129"
+    gomboc-ai/checkov/name: Ensure that respective logs of Amazon Relational Database Service (Amazon RDS) are enabled
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement-plain: "Enabling CloudWatch log exports allows for centralized monitoring of database activities, which is critical for security auditing, compliance, and troubleshooting. It ensures that logs such as audit, error, and slow query logs are retained outside the instance lifecycle."
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Enabling CloudWatch log exports allows for centralized monitoring of database activities, which is critical for security auditing, compliance, and troubleshooting. It ensures that logs such as audit, error, and slow query logs are retained outside the instance lifecycle.
+
+    gomboc-ai/risk/score: low
+    gomboc-ai/risk/statement-plain: "This is an in-place modification that typically does not require resource replacement or result in downtime. The primary risk is a potential increase in AWS costs due to CloudWatch data ingestion and storage fees, particularly for databases with high log volume."
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      This is an in-place modification that typically does not require resource replacement or result in downtime. The primary risk is a potential increase in AWS costs due to CloudWatch data ingestion and storage fees, particularly for databases with high log volume.
+
+    gomboc-ai/example: |
+      ```diff
+      resource "aws_db_instance" "mysql-example" {
+        # ...
+        engine = "mysql"
+      
+      + enabled_cloudwatch_logs_exports = ["audit", "error", "slowquery", "iam-db-auth-error"]
+      }
+      ```    
+
+    gomboc-ai/description-plain: Ensures AWS DB instances are configured to export required logs to CloudWatch Logs based on their engine type, for improved monitoring, auditing, and compliance. Certain logs, such as IAM authentication error logs, are only required if IAM database authentication is enabled for the instance. Some engine types, like Aurora or custom engines, do not support CloudWatch log exports.
+  
+  # This rule should be run after the rule that ensures IAM database authentication is enabled
+  # gomboc-ai/ensure-rds-database-has-iam-authentication-enabled
+  priority: 1400510
+  classifications:
+    - gomboc-ai/policy/surface_area/auditing_and_monitoring/detailed_monitoring
+    - gomboc-ai/policy/surface_area/auditing_and_monitoring/audit_logs
+    - gomboc-ai/cis/controls_8-1-2/8_audit_log_management/8-2_collect_audit_logs
+    - gomboc-ai/cis/controls_8-1-2/8_audit_log_management/8-3_ensure_adequate_audit_log_storage
+    - gomboc-ai/cis/controls_8-1-2/8_audit_log_management/8-5_collect_detailed_audit_logs
+    - gomboc-ai/cis/controls_8-1-2/8_audit_log_management/8-9_centralize_audit_logs
+
+  name: gomboc-ai/ensure-db-instance-exports-logs-to-cloudwatch
+  display_name: Ensure DB Instance exports logs to CloudWatch
+  description: |
+    ## Description
+
+    Ensures that AWS DB Instance exports logs to CloudWatch by setting the `enabled_cloudwatch_logs_exports` attribute to appropriate values according to engine type.
+
+    See the [RDS API documentation](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html) (search for `EnableCloudwatchLogsExports.member.N`) for details.
+
+    > [!NOTE]
+    > CloudWatch Logs are **not** supported for the following engine types:
+    > - `aurora-*`
+    > - custom engines
+
+    **Log exports enforced based on engine type:**  
+
+    | Engine Type   | Required Logs                                        |
+    |--------------|------------------------------------------------------|
+    | `mysql`      | `audit`, `error`, `slowquery`, `iam-db-auth-error` (only if `iam_database_authentication_enabled = true`) |
+    | `mariadb`    | `audit`, `error`, `slowquery`, `iam-db-auth-error` (only if `iam_database_authentication_enabled = true`) |
+    | `postgres`   | `postgresql`, `upgrade`, `iam-db-auth-error` (only if `iam_database_authentication_enabled = true`) |
+    | `sqlserver-*`| `agent`, `error`                                     |
+    | `oracle-*`   | `alert`, `audit`, `listener`, `trace`                |
+    | `db2-*`      | `diag`, `notify`                                     |
+
+    For log names with conditional requirements (like `iam-db-auth-error`), they will be included only if IAM database authentication is enabled.
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+    collect:
+      - name: engine
+        audit: |
+          {{ aResource("aws_db_instance", anAttribute("engine")) }}
+      - name: iam_database_authentication_enabled
+        audit: |
+          {{ aResource("aws_db_instance", anAttribute("iam_database_authentication_enabled")) }}
+  rules:
+
+    - name: ensure-that-enabled_cloudwatch_logs_exports-is-set-to-the-appropriate-values-based-on-engine-type-and-iam-database-authentication-is-enabled
+      audit: |
+        {{ aResource("aws_db_instance", anAttribute("enabled_cloudwatch_logs_exports")) }}
+      
+      # Skip finding if the engine is aurora-* or custom
+      # Skip finding if the attribute is correctly set in any order
+      skip_finding: |
+        let engine = trim(first(filter(flatten(collect(collections, "engine.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+        let iam_database_authentication_enabled = trim(first(filter(flatten(collect(collections, "iam_database_authentication_enabled.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"") == "true";
+
+        let engine_does_not_support_cloudwatch_logs = hasSubString(lower(engine), "aurora-") or hasSubString(lower(engine), "custom");
+        
+        let log_exports = $.value;
+        let has_correct_values = if hasSubString(lower(engine), "mysql") or hasSubString(lower(engine), "mariadb") {
+          hasSubString(log_exports, "audit") and hasSubString(log_exports, "error") and hasSubString(log_exports, "slowquery") and (iam_database_authentication_enabled ? hasSubString(log_exports, "iam-db-auth-error") : true)
+        } else {
+          if hasSubString(lower(engine), "postgres"){
+            hasSubString(log_exports, "postgresql") and hasSubString(log_exports, "upgrade") and (iam_database_authentication_enabled ? hasSubString(log_exports, "iam-db-auth-error") : true)
+          } else {
+            if hasSubString(lower(engine), "sqlserver"){
+              hasSubString(log_exports, "agent") and hasSubString(log_exports, "error")
+            } else {
+              if hasSubString(lower(engine), "oracle"){
+                hasSubString(log_exports, "alert") and hasSubString(log_exports, "audit") and hasSubString(log_exports, "listener") and hasSubString(log_exports, "trace")
+              } else {
+                if hasSubString(lower(engine), "db2"){
+                  hasSubString(log_exports, "diag.log") and hasSubString(log_exports, "notify.log") and (iam_database_authentication_enabled ? hasSubString(log_exports, "iam-db-auth-error") : true)
+                } else {
+                  false
+                }
+              } 
+            }
+          }
+        };
+    
+        engine_does_not_support_cloudwatch_logs or has_correct_values
+
+      remediation:
+        - command: replace
+          path: value
+          value: |-
+            {{ 
+              let engine = trim(first(filter(flatten(collect(collections, "engine.*")), { #.name == finding.name }))?.value ?? "\"\"", "\""); 
+              let iam_database_authentication_enabled = trim(first(filter(flatten(collect(collections, "iam_database_authentication_enabled.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"") == "true";
+
+              let maria_mysql_logs = if iam_database_authentication_enabled {
+                 "[" + join(["\"audit\"", "\"error\"", "\"slowquery\"", "\"iam-db-auth-error\""], ", ") + "]"
+              } else {
+                "[" + join(["\"audit\"", "\"error\"", "\"slowquery\""], ", ") + "]"
+              };
+
+              let postgres_logs = if iam_database_authentication_enabled {
+                "[" + join(["\"postgresql\"", "\"upgrade\"", "\"iam-db-auth-error\""], ", ") + "]"
+              } else {
+                "[" + join(["\"postgresql\"", "\"upgrade\""], ", ") + "]"
+              };
+
+              let sqlserver_logs = "[" + join(["\"agent\"", "\"error\""], ", ") + "]";
+
+              let oracle_logs = "[" + join(["\"alert\"", "\"audit\"", "\"listener\"", "\"trace\""], ", ") + "]";
+              
+              let db2_logs = if iam_database_authentication_enabled {
+                "[" + join(["\"diag.log\"", "\"notify.log\"", "\"iam-db-auth-error\""], ", ") + "]"
+              } else {
+                "[" + join(["\"diag.log\"", "\"notify.log\""], ", ") + "]"
+              };
+
+              if hasSubString(lower(engine), "mysql") or hasSubString(lower(engine), "mariadb") { 
+                maria_mysql_logs
+              } else { 
+                if hasSubString(lower(engine), "postgres") { 
+                  postgres_logs
+                } else { 
+                  if hasSubString(lower(engine), "sqlserver") { 
+                    sqlserver_logs
+                  } else { 
+                    if hasSubString(lower(engine), "oracle") { 
+                      oracle_logs
+                    } else { 
+                      if hasSubString(lower(engine), "db2") { 
+                        db2_logs
+                      } else { 
+                        [] 
+                      } 
+                    } 
+                  } 
+                } 
+              } 
+            }}
+
+    - name: ensure-that-enabled_cloudwatch_logs_exports-is-set-to-the-appropriate-values-based-on-engine-type-when-it-is-missing-and-iam-database-authentication-is-enabled
+      audit: |
+        {{ aResource("aws_db_instance", aMissingAttribute("enabled_cloudwatch_logs_exports")) }}
+
+      # Skip finding if the engine is aurora-* or custom
+      skip_finding: |
+        let engine = trim(first(filter(flatten(collect(collections, "engine.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+        hasSubString(lower(engine), "aurora-") or hasSubString(lower(engine), "custom")
+      
+      remediation:
+        - command: insert_after
+          path: body
+          flags:
+            indent: "  "
+            prefix: "\n\n"
+          value: |
+            enabled_cloudwatch_logs_exports = {{ 
+              let engine = trim(first(filter(flatten(collect(collections, "engine.*")), { #.name == finding.name }))?.value ?? "\"\"", "\""); 
+              let iam_database_authentication_enabled = trim(first(filter(flatten(collect(collections, "iam_database_authentication_enabled.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"") == "true";
+
+              let maria_mysql_logs = if iam_database_authentication_enabled {
+                 "[" + join(["\"audit\"", "\"error\"", "\"slowquery\"", "\"iam-db-auth-error\""], ", ") + "]"
+              } else {
+                "[" + join(["\"audit\"", "\"error\"", "\"slowquery\""], ", ") + "]"
+              };
+
+              let postgres_logs = if iam_database_authentication_enabled {
+                "[" + join(["\"postgresql\"", "\"upgrade\"", "\"iam-db-auth-error\""], ", ") + "]"
+              } else {
+                "[" + join(["\"postgresql\"", "\"upgrade\""], ", ") + "]"
+              };
+
+              let sqlserver_logs = "[" + join(["\"agent\"", "\"error\""], ", ") + "]";
+
+              let oracle_logs = "[" + join(["\"alert\"", "\"audit\"", "\"listener\"", "\"trace\""], ", ") + "]";
+              
+              let db2_logs = if iam_database_authentication_enabled {
+                "[" + join(["\"diag.log\"", "\"notify.log\"", "\"iam-db-auth-error\""], ", ") + "]"
+              } else {
+                "[" + join(["\"diag.log\"", "\"notify.log\""], ", ") + "]"
+              };
+
+              if hasSubString(lower(engine), "mysql") or hasSubString(lower(engine), "mariadb") { 
+                maria_mysql_logs
+              } else { 
+                if hasSubString(lower(engine), "postgres") { 
+                  postgres_logs
+                } else { 
+                  if hasSubString(lower(engine), "sqlserver") { 
+                    sqlserver_logs
+                  } else { 
+                    if hasSubString(lower(engine), "oracle") { 
+                      oracle_logs
+                    } else { 
+                      if hasSubString(lower(engine), "db2") { 
+                        db2_logs
+                      } else { 
+                        [] 
+                      } 
+                    } 
+                  } 
+                } 
+              } 
+            }}

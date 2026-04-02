@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: "ensure_aws_db_instance_is_not_publicly_accessible"
+spec:
+  rulespace: "."
+  cases:
+    - name: "Ensure AWS DB Instance is not Publicly Accessible"
+      language: "terraform"
+      workspace:
+        path: "."
+      remediated_workspace:
+        path: "./expected"
+      expected_report:
+        rules_applied: 2
+        findings: 2
+        fixes: 2
+        changes: 2
+        errors: []

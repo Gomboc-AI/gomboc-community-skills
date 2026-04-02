@@ -1,0 +1,19 @@
+
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: Ensure Instance API termination protection is enabled
+  priority: 1
+spec:
+  rulespace: .
+  cases:
+  - name: Ensure Instance API termination protection is enabled
+    language: terraform
+    workspace:
+      path: ./workspace
+    remediated_workspace:
+      path: ./workspace_expected
+    expected_report:
+      errors: []

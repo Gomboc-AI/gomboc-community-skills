@@ -1,0 +1,19 @@
+type: Test
+version: v1
+metadata:
+  name: kms-key-rotation-enabled
+  priority: 1
+spec:
+  rulespace: "."
+  cases:
+    - name: KMS Key Rotation Enabled
+      language: cloudformation-yaml
+      workspace:
+        path: "./workspace"
+      remediated_workspace:
+        path: "./workspace_expected"
+      expected_report:
+        rules_applied: 4
+        findings: 14
+        fixes: 14
+        errors: []

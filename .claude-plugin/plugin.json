@@ -1,0 +1,25 @@
+{
+  "name": "gomboc-community",
+  "description": "Create, test, and publish ORL rules for Terraform, CloudFormation, and Bicep",
+  "version": "1.0.0",
+  "author": {
+    "name": "Gomboc AI",
+    "email": "community@gomboc.ai"
+  },
+  "homepage": "https://gomboc.ai",
+  "repository": "https://github.com/Gomboc-AI/gomboc-community-skills",
+  "license": "MIT",
+  "keywords": [
+    "orl",
+    "infrastructure-as-code",
+    "terraform",
+    "cloudformation",
+    "bicep",
+    "security",
+    "remediation",
+    "compliance",
+    "devops",
+    "devsecops",
+    "appsec"
+  ]
+}

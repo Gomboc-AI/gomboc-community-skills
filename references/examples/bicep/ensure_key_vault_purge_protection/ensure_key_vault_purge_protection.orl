@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/provider: Azure
+    gomboc-ai/resource: Microsoft.KeyVault/vaults
+    gomboc-ai/description-plain: "Ensure Azure Key Vault has purge protection enabled."
+  classifications:
+    - gomboc-ai/policy/secure_management/accidental_deletion_protection/deletion_protection
+  description: |
+    ## Description
+
+    Ensures that Azure Key Vaults have purge protection enabled by setting enablePurgeProtection to true.
+  display_name: Ensure Key Vault Purge Protection Enabled
+  name: gomboc-ai/ensure_key_vault_purge_protection
+spec:
+  template:
+    language: bicep
+    audit_language: ast
+
+  rules:
+    - name: enablePurgeProtection-explicitly-false
+      audit: |
+        (resource_declaration
+          (string
+            (string_content) @_type
+          )
+          (object
+            (object_property
+              (identifier) @_props_key
+              (object
+                (object_property
+                  (identifier) @_prop_key
+                  (boolean) @value
+                )
+              )
+            )
+          )
+          (#match? @_type "Microsoft\\.KeyVault/vaults")
+          (#eq? @_props_key "properties")
+          (#eq? @_prop_key "enablePurgeProtection")
+          (#eq? @value "false")
+        )
+      remediation:
+        - command: replace
+          path: value
+          value: "true"
+
+    - name: enablePurgeProtection-missing
+      audit: |
+        (resource_declaration
+          (string
+            (string_content) @_type
+          )
+          (object
+            (object_property
+              (identifier) @_props_key
+              (object) @props_body
+            )
+          )
+          (#match? @_type "Microsoft\\.KeyVault/vaults")
+          (#eq? @_props_key "properties")
+        ) @resource
+      skip_finding: |
+        finding.resource matches "enablePurgeProtection"
+      remediation:
+        - command: replace
+          path: props_body
+          value: |-
+            {
+                enablePurgeProtection: true{{ $.props_body | replace("{", "", 1) }}
+type: Ruleset
+version: v1

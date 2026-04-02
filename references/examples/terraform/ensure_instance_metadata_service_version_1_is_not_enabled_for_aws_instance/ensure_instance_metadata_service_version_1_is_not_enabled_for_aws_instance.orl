@@ -1,0 +1,150 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    use-case-1: git@github.com:Gomboc-AI/orl-rules.git;main;/checkov/terraform/rules/CKV_AWS_79-aws_instance
+
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: aws_instance
+    gomboc-ai/source: checkov
+    gomboc-ai/language: terraform
+
+    gomboc-ai/checkov/date: 2025-11-10
+    gomboc-ai/checkov/id: CKV_AWS_79
+    gomboc-ai/checkov/name: Ensure Instance Metadata Service Version 1 is not enabled
+
+    gomboc-ai/reviewer/date: 2025-12-01
+    gomboc-ai/reviewer/name: Zach Talarick
+    gomboc-ai/reviewer/status: valid
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Mitigates critical Server-Side Request Forgery (SSRF) vulnerabilities by strictly enforcing session-oriented authentication (IMDSv2) for AWS credential retrieval, preventing attackers from exfiltrating IAM keys via simple GET requests.
+
+    gomboc-ai/risk/score: high
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      **High probability of immediate application outages.** Legacy SDKs and scripts may fail; specifically, containerized workloads (Docker/K8s) will lose access to credentials unless `http_put_response_hop_limit` is explicitly raised to `2` to accommodate the extra network hop.
+
+    gomboc-ai/risk/statement-plain: High probability of immediate application outages. Legacy SDKs and scripts may fail; specifically, containerized workloads (Docker/K8s) will lose access to credentials unless http_put_response_hop_limit is explicitly raised to 2 to accommodate the extra network hop.
+
+    gomboc-ai/impact/statement-plain: Mitigates critical Server-Side Request Forgery (SSRF) vulnerabilities by strictly enforcing session-oriented authentication (IMDSv2) for AWS credential retrieval, preventing attackers from exfiltrating IAM keys via simple GET requests.
+
+    gomboc-ai/description-plain: This rule ensures that the Instance Metadata Service Version 1 is not enabled for AWS Instances. This is a security best practice to prevent the exposure of sensitive information through the metadata service.
+
+    gomboc-ai/example: |-
+      ```diff
+      resource "aws_instance" "example1" {
+        # ... other config ...
+
+        metadata_options {
+          http_endpoint = "enabled"
+
+      +   http_tokens   = "required"
+        }
+      }
+
+      resource "aws_instance" "example2" {
+        # ... other config ...
+
+      +  metadata_options {
+      +    http_tokens   = "required"
+      +  }
+      }
+      ```
+    gomboc-ai/visibility: "public"
+    gomboc-ai/public-rule-bodies: "true"
+
+  priority: 1300200
+  classifications:
+    - gomboc-ai/policy/authentication/api_key_authentication
+  name: gomboc-ai/ensure-instance-metadata-service-version-1-is-not-enabled-for-aws-instance
+  display_name: Ensure Instance Metadata Service Version 1 is not enabled for AWS Instances
+  description: |
+    ## Description
+
+    This rule ensures that the Instance Metadata Service Version 1 is not enabled for AWS Instances. This is a security best practice to prevent the exposure of sensitive information through the metadata service.
+
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+    collect:
+      - name: http_endpoint
+        audit: |
+          {{ aResource("aws_instance", aBlock("metadata_options", anAttribute("http_endpoint"))) }}
+  rules:
+  - name: ensure-aws_instance-metadata_options-http_tokens-is-required
+
+    skip_finding: |
+      let http_endpoint = trim(first(filter(flatten(collect(collections, "http_endpoint.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+      http_endpoint == "disabled"
+
+    audit: |
+      {{ aResource("aws_instance", aBlock("metadata_options", anAttributeValue("http_tokens", "(#match? @value \"optional\")" ))) }}
+
+    remediation:
+      - command: replace
+        path: value
+        value: "\"required\""
+
+  - name: ensure-aws_instance-metadata_options-http_tokens-is-required-when-it-is-missing
+    skip_finding: |
+      let http_endpoint = trim(first(filter(flatten(collect(collections, "http_endpoint.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+      http_endpoint == "disabled"
+
+    audit: |
+      {{ aResource("aws_instance", aBlock("metadata_options", aMissingAttribute("http_tokens"))) }}
+    remediation:
+      - command: insert_after
+        path: block_body
+        flags:
+          indent: "    "
+          prefix: "\n\n"
+        value: |
+          http_tokens = "required"
+
+  - name: ensure-aws_instance-metadata_options-http_tokens-is-required-when-metadata_options-is-empty
+
+    skip_finding: |
+      let http_endpoint = trim(first(filter(flatten(collect(collections, "http_endpoint.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+      http_endpoint == "disabled"
+
+    audit: |
+      {{ aResource("aws_instance", anEmptyBlock("metadata_options")) }}
+
+    remediation:
+      - command: insert_before
+        path: block_end
+        flags:
+          prefix: "\n\n"
+          indent: "    "
+          suffix: "  "
+        value: |
+          http_tokens = "required"
+
+  - name: ensure-aws_instance-metadata_options-http_tokens-is-required-when-metadata_options-is-missing
+
+    skip_finding: |
+      let http_endpoint = trim(first(filter(flatten(collect(collections, "http_endpoint.*")), { #.name == finding.name }))?.value ?? "\"\"", "\"");
+      http_endpoint == "disabled"
+
+    audit: |
+      {{ aResource("aws_instance", aMissingBlock("metadata_options")) }}
+
+    remediation:
+      - command: insert_after
+        path: body
+        flags:
+          indent: "  "
+          prefix: "\n\n"
+        value: |
+          metadata_options {
+            http_tokens = "required"
+          }

@@ -1,0 +1,144 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    use-case-1: git@github.com:Gomboc-AI/orl-rules.git;main;/checkov/terraform/rules/CKV_AWS_8-aws_instance
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: aws_instance
+    gomboc-ai/source: checkov
+    gomboc-ai/language: terraform
+
+    gomboc-ai/risk/score: high
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      Enabling encryption on an existing EC2 instance or Launch Configuration is a destructive change. Because AWS cannot encrypt an existing volume in-place, Terraform will force a replacement of the resource.
+
+      This results in:
+        - **Immediate Downtime**: The running instance will be terminated and a new one provisioned.
+        - **Data Loss**: Any data stored on the root volume (and attached EBS volumes defined in the resource) will be permanently deleted upon destruction unless a snapshot is manually created and restored.
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Enabling this rule ensures that all data residing on the instance—including the operating system, sensitive logs, application data, and swap space—is cryptographically protected at rest using AES-256. This creates a mandatory security barrier that prevents unauthorized access to the raw storage blocks and ensures the infrastructure meets critical compliance standards (e.g., PCI-DSS, HIPAA, SOC2, GDPR). Unencrypted data at rest is a fundamental security failure. While it does not affect the runtime performance or availability of the application, it represents a significant compliance violation and a "defense-in-depth" gap.
+
+    gomboc-ai/risk/statement-plain: "Enabling encryption on an existing EC2 instance or Launch Configuration is a destructive change. Because AWS cannot encrypt an existing volume in-place, Terraform will force a replacement of the resource. This results in Immediate Downtime: The running instance will be terminated and a new one provisioned. Data Loss: Any data stored on the root volume (and attached EBS volumes defined in the resource) will be permanently deleted upon destruction unless a snapshot is manually created and restored."
+
+    gomboc-ai/impact/statement-plain: "Enabling this rule ensures that all data residing on the instance—including the operating system, sensitive logs, application data, and swap space—is cryptographically protected at rest using AES-256. This creates a mandatory security barrier that prevents unauthorized access to the raw storage blocks and ensures the infrastructure meets critical compliance standards (e.g., PCI-DSS, HIPAA, SOC2, GDPR). Unencrypted data at rest is a fundamental security failure. While it does not affect the runtime performance or availability of the application, it represents a significant compliance violation and a defense-in-depth gap."
+
+    gomboc-ai/description-plain: Ensure all data stored in the root_block_device of an AWS instance is encrypted.
+
+    gomboc-ai/reviewer/date: 2025-11-26
+    gomboc-ai/reviewer/name: Zach Talarick
+    gomboc-ai/reviewer/status: valid
+
+    gomboc-ai/checkov/date: 2025-11-10
+    gomboc-ai/checkov/id: CKV_AWS_8
+    gomboc-ai/checkov/name: Ensure all data stored in the Launch configuration or instance Elastic Blocks Store is securely encrypted
+
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/example: |-
+      ```diff
+      resource "aws_instance" "example" {
+        ami = "ami-0c55b159cbfafe1f0"
+        instance_type = "t3.micro"
+
+      + root_block_device {
+      +  encrypted = true
+      + }
+      }
+
+      resource "aws_instance" "example2" {
+        ami = "ami-0c55b159cbfafe1f0"
+        instance_type = "t3.micro"
+
+        root_block_device {
+      -   encrypted = false
+      +   encrypted = true
+        }
+      }
+      ```
+
+  priority: 1300200
+  classifications:
+    - gomboc-ai/policy/encryption/at_rest
+    - gomboc-ai/cis/controls_8-1-2/3_data_protection/3-11_encrypt_sensitive_data_at_rest
+    - gomboc-ai/policy/encryption/encryption_at_rest/encryption_at_rest_with_customer_managed_key
+    - gomboc-ai/policy/encryption/encryption_at_rest/encryption_at_rest_with_provider_managed_key
+  name: gomboc-ai/ensure-aws_instance-root_block_device-is-encrypted
+  display_name: Ensure all data stored in the root_block_device of an AWS instance is encrypted
+  description: |
+    ## Description
+
+    Ensure all data stored in the root_block_device of an AWS instance is encrypted.
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+  rules:
+  - name: ensure-aws_instance-root_block_device-is-encrypted-when-it-is-explicitly-set-to-false
+    audit: |
+      {{ aResource("aws_instance", aBlock("root_block_device", anAttributeValueEq("encrypted", "false"))) }}
+    remediation:
+      - command: replace
+        path: value
+        value: "true"
+
+  - name: ensure-aws_instance-root_block_device-is-encrypted-when-it-is-missing
+    audit: |
+      {{ aResource("aws_instance", aBlock("root_block_device", aMissingAttribute("encrypted"))) }}
+    remediation:
+      - command: insert_after
+        path: block_body
+        flags:
+          indent: "    "
+          prefix: "\n\n"
+        value: |
+          encrypted = true
+
+  - name: ensure-aws_instance-root_block_device-is-encrypted-when-it-is-missing
+    audit: |
+      {{ aResource("aws_instance", aMissingBlock("root_block_device")) }}
+    remediation:
+      - command: insert_after
+        path: body
+        flags:
+          indent: "  "
+          prefix: "\n\n"
+        value: |
+          root_block_device {
+            encrypted = true
+            delete_on_termination = false
+          }
+
+  - name: ensure-aws_instance-root_block_device-is-encrypted-when-it-is-empty
+    audit: |
+      {{ aResource("aws_instance", anEmptyBlock("root_block_device")) }}
+    remediation:
+      - command: insert_before
+        flags:
+          prefix: "\n\n"
+          indent: "    "
+          suffix: "  "
+        path: block_end
+        value: |
+          encrypted = true
+
+  - name: Add customer managed key when it is missing
+    audit: |
+      {{ aResource("aws_instance", aBlock("root_block_device", aMissingAttribute("kms_key_id"))) }}
+    skip_finding: "vars.default?.aws_instance_root_block_device_cmk_kms_key_id == nil"
+    remediation:
+      - command: insert_after
+        path: block_body
+        flags:
+          indent: "    "
+          prefix: "\n\n"
+        value: |
+          kms_key_id = "{{ vars.default.aws_instance_root_block_device_cmk_kms_key_id }}"
