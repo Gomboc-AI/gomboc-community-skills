@@ -1,0 +1,20 @@
+---
+type: Test
+version: v1
+metadata:
+  name: elasticsearch-node-to-node-encryption
+  priority: 100
+spec:
+  rulespace: .
+  cases:
+    - name: Elasticsearch node-to-node encryption
+      language: cloudformation-yaml
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./workspace_expected
+      expected_report:
+        rules_applied: 5
+        findings: 11
+        fixes: 11
+        errors: []

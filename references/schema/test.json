@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Gomboc-AI/orl/lib/lang/test/test",
+  "$ref": "#/$defs/Test",
+  "$defs": {
+    "ContextPath": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "variables",
+            "tfplan"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "path",
+        "type"
+      ]
+    },
+    "HookDetails": {
+      "properties": {
+        "command_path": {
+          "type": "string"
+        },
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "command_path",
+        "args",
+        "stdout",
+        "stderr",
+        "exit_code"
+      ]
+    },
+    "Metadata": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "skip": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "description": {
+          "type": "string"
+        },
+        "required_contexts": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "annotations": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "classifications": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ]
+    },
+    "PathOrInline": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "inline": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Record": {
+      "properties": {
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "level": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "message"
+      ]
+    },
+    "ReportExpectations": {
+      "properties": {
+        "workspace": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "findings": {
+          "type": "integer"
+        },
+        "fixes": {
+          "type": "integer"
+        },
+        "error_count": {
+          "type": "integer"
+        },
+        "logs_count": {
+          "type": "integer"
+        },
+        "rules_applied": {
+          "type": "integer"
+        },
+        "changes": {
+          "type": "integer"
+        },
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "logs": {
+          "items": {
+            "$ref": "#/$defs/Record"
+          },
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleExpectation"
+          },
+          "type": "array"
+        },
+        "hooks": {
+          "additionalProperties": {
+            "$ref": "#/$defs/HookDetails"
+          },
+          "type": "object"
+        },
+        "output_file": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RuleExpectation": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "findings": {
+          "type": "integer"
+        },
+        "fixes": {
+          "type": "integer"
+        },
+        "changes": {
+          "type": "integer"
+        },
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error_count": {
+          "type": "integer"
+        },
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "file_count": {
+          "type": "integer"
+        },
+        "hooks": {
+          "additionalProperties": {
+            "$ref": "#/$defs/HookDetails"
+          },
+          "type": "object"
+        },
+        "logs": {
+          "items": {
+            "$ref": "#/$defs/Record"
+          },
+          "type": "array"
+        },
+        "logs_count": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ]
+    },
+    "Test": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Rule",
+            "Test",
+            "Ruleset",
+            "Context",
+            "Variables",
+            "Report"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "enum": [
+            "v1"
+          ]
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/TestSpec"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "version",
+        "metadata",
+        "spec"
+      ]
+    },
+    "TestCase": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "hooks_dir": {
+          "type": "string"
+        },
+        "preset_hook": {
+          "type": "string"
+        },
+        "skip": {
+          "type": "boolean"
+        },
+        "language": {
+          "type": "string"
+        },
+        "workspace": {
+          "$ref": "#/$defs/PathOrInline"
+        },
+        "contexts": {
+          "items": {
+            "$ref": "#/$defs/ContextPath"
+          },
+          "type": "array"
+        },
+        "log_level": {
+          "type": "string"
+        },
+        "remediated_workspace": {
+          "$ref": "#/$defs/PathOrInline"
+        },
+        "expected_report": {
+          "$ref": "#/$defs/ReportExpectations"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "language",
+        "workspace"
+      ]
+    },
+    "TestSpec": {
+      "properties": {
+        "rulespace": {
+          "type": "string"
+        },
+        "cases": {
+          "items": {
+            "$ref": "#/$defs/TestCase"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "rulespace",
+        "cases"
+      ]
+    }
+  }
+}

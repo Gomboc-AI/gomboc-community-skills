@@ -1,0 +1,28 @@
+
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: Ensure RDS database has IAM authentication enabled
+  priority: 1
+spec:
+  rulespace: ../../generated/att-1/rules
+  # rulespace: .
+  cases:
+  - name: Ensure RDS database has IAM authentication enabled
+    language: terraform
+    workspace:
+      path: ./workspace
+    remediated_workspace:
+      path: ./workspace_expected
+    expected_report:
+      errors: []
+  - name: Ensure RDS database has IAM authentication enabled with generated test cases
+    language: terraform
+    workspace:
+      path: ./generated_cases
+    remediated_workspace:
+      path: ./generated_cases_expected
+    expected_report:
+      errors: []

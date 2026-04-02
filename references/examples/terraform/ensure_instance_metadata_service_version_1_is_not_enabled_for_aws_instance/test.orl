@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: CKV_AWS_79-aws_instance-test
+  priority: 1
+spec:
+  rulespace: .
+  cases:
+  - name: test
+    language: terraform
+    workspace:
+      path: ./workspace
+    remediated_workspace:
+      path: ./workspace_expected
+    expected_report:
+      findings: 5
+      fixes: 5
+      errors: []
+  

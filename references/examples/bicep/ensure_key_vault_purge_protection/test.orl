@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: ensure_key_vault_purge_protection
+spec:
+  rulespace: "."
+  cases:
+    - name: Ensure Key Vault Purge Protection Enabled
+      language: bicep
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./workspace_expected
+      expected_report:
+        rules_applied: 2
+        findings: 2
+        fixes: 2
+        changes: 2
+        errors: []

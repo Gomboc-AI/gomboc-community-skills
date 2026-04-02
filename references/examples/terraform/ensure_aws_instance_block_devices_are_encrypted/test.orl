@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: CKV_AWS_8-aws_instance-test
+  priority: 1
+spec:
+  rulespace: .
+  cases:
+  - name: test-root-block-device
+    language: terraform
+    workspace:
+      path: ./root_block_device/workspace
+    remediated_workspace:
+      path: ./root_block_device/workspace_expected
+    expected_report:
+      findings: 4
+      fixes: 4
+      errors: []
+  
+  - name: test-root-block-device-with-variables
+    language: terraform
+    workspace:
+      path: ./root_block_device/workspace
+    remediated_workspace:
+      path: ./root_block_device/workspace_expected_with_variables
+    contexts:
+      - path: ./context/vars.orl
+        type: variables
+    expected_report:
+      findings: 9
+      fixes: 9
+      errors: []
+
+  - name: test-ebs-block-device
+    language: terraform
+    workspace:
+      path: ./ebs_block_device/workspace
+    remediated_workspace:
+      path: ./ebs_block_device/workspace_expected
+    expected_report:
+      findings: 2
+      fixes: 2
+      errors: []
+
+  - name: test-ebs-block-device-with-variables
+    language: terraform
+    workspace:
+      path: ./ebs_block_device/workspace
+    remediated_workspace:
+      path: ./ebs_block_device/workspace_expected_with_variables
+    contexts:
+      - path: ./context/vars.orl
+        type: variables
+    expected_report:
+      findings: 10
+      fixes: 10
+      errors: []

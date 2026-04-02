@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/variable.json
+---
+type: Variables
+version: v1
+metadata:
+  name: default
+  description: A set of variables for testing context
+data:
+  aws_instance_root_block_device_cmk_kms_key_id: arn:aws:kms:us-east-1:111122223333:alias/my-cmk-key
+  aws_instance_ebs_block_device_cmk_kms_key_id: arn:aws:kms:us-east-1:111122223333:alias/my-cmk-key

@@ -1,0 +1,36 @@
+type: Ruleset
+version: v1
+metadata:
+  annotations:
+    contributed-by: "USER_NAME"
+    provider: "CLOUD_PROVIDER"
+    resource: "RESOURCE_TYPE"
+    description-plain: "BRIEF_DESCRIPTION"
+    example: |
+      ```diff
+      resource "RESOURCE_TYPE" "example" {
+        # ...
+      - ATTRIBUTE_NAME = false
+      + ATTRIBUTE_NAME = true
+      }
+      ```
+  name: "RULESET_NAME"
+  display_name: "DISPLAY_NAME"
+  description: |
+    ## Description
+
+    DETAILED_DESCRIPTION
+spec:
+  template:
+    language: <REPLACE>
+    audit_language: ast
+  rules:
+    - name: "ensure-ATTRIBUTE_NAME-is-true-when-it-is-explicitly-wrong"
+      # skip_finding: |
+      #   Logic to filter out false positives
+      audit: |
+        <REPLACE_ME_AST>
+      remediation:
+        - command: replace
+          path: value
+          value: "true"

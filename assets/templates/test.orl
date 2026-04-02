@@ -1,0 +1,16 @@
+type: Test
+version: v1
+metadata:
+  name: "TEST_SUITE_NAME"
+  priority: 1
+spec:
+  rulespace: "PATH_TO_RULES" # Usually "." or a relative path to where rules are located
+  cases:
+  - name: "CASE_NAME"
+    language: terraform
+    workspace:
+      path: "./workspace" # Path to files that should fail the audit
+    remediated_workspace:
+      path: "./workspace_expected" # Path to files as they should look after remediation
+    expected_report:
+      errors: [] # Expects no errors in the report

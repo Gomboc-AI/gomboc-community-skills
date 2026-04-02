@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: ensure_sql_server_minimum_tls
+spec:
+  rulespace: "."
+  cases:
+    - name: Ensure SQL Server Minimum TLS 1.2
+      language: bicep
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./workspace_expected
+      expected_report:
+        rules_applied: 1
+        findings: 2
+        fixes: 2
+        changes: 2
+        errors: []

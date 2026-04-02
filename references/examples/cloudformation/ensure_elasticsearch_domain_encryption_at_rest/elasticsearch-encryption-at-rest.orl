@@ -1,0 +1,225 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    gomboc-ai/visibility: public
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: AWS::Elasticsearch::Domain
+    gomboc-ai/reviewer/name: AI Assistant
+    gomboc-ai/reviewer/date: 2026-03-11
+    gomboc-ai/reviewer/status: valid
+    use-case-1: "git@github.com:Gomboc-AI/orl-rules.git;main;/config_options/cloudformation/aws/aws--elasticsearch--domain/ensure-encryption-at-rest-enabled"
+    gomboc-ai/example: |-
+      ```diff
+      Resources:
+        MyElasticsearchDomain:
+          Type: AWS::Elasticsearch::Domain
+          Properties:
+            DomainName: my-es-domain
+            ElasticsearchVersion: "7.10"
+      +     EncryptionAtRestOptions:
+      +       Enabled: true
+
+        MyElasticsearchDomain2:
+          Type: AWS::Elasticsearch::Domain
+          Properties:
+            DomainName: my-es-domain-2
+            ElasticsearchVersion: "7.10"
+            EncryptionAtRestOptions:
+      -       Enabled: false
+      +       Enabled: true
+      ```
+
+    gomboc-ai/description-plain: "Ensures that encryption at rest is enabled for the AWS Elasticsearch Domain by setting EncryptionAtRestOptions.Enabled to true."
+
+    gomboc-ai/impact/score: medium
+    gomboc-ai/impact/statement-plain: "Enables encryption at rest for the Elasticsearch Domain using a service-managed key, protecting stored data from unauthorized physical access and reducing exposure if the underlying storage media is compromised."
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Enables encryption at rest for the Elasticsearch Domain using a **service-managed key**, protecting stored data from unauthorized physical access and reducing exposure if the underlying storage media is compromised.
+
+      This remediation sets `EncryptionAtRestOptions.Enabled` to `true` under the domain's `Properties`, aligning the resource with security best practices and compliance requirements for data-at-rest protection.
+
+    gomboc-ai/risk/score: high
+    gomboc-ai/risk/statement-plain: "Enabling encryption at rest on an existing Elasticsearch Domain requires resource replacement, as AWS does not support enabling this property in-place. This carries significant operational risks: the existing domain must be deleted and recreated, causing downtime during the migration period. Data must be migrated to the new domain beforehand to avoid data loss. The new domain will have a different endpoint, requiring downstream application configuration updates and potential integration failures if not updated in time. Additional dollar cost is incurred during any overlap period when both domains are running."
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      Enabling encryption at rest on an existing Elasticsearch Domain **requires resource replacement**, as AWS does not support enabling this property in-place. This carries significant operational risks:
+
+      * **Downtime:** The existing domain must be deleted and a new one provisioned, causing unavailability during migration.
+      * **Data Loss:** Data must be migrated to the new domain before deletion; failure to do so will result in permanent loss of indexed data.
+      * **Integration Failure:** The new domain generates a different endpoint, requiring updates to all downstream applications and services that reference the domain URL.
+      * **Dollar Cost:** Running both domains simultaneously during migration incurs additional infrastructure costs.
+
+  classifications:
+    - gomboc-ai/policy/encryption/encryption_at_rest/encryption_at_rest_with_provider_managed_key
+    - gomboc-ai/prismacloud/CKV_AWS_5
+  description: |
+    ## Description
+
+    Ensures that encryption at rest is enabled for the AWS Elasticsearch Domain by setting `EncryptionAtRestOptions.Enabled` to `true`.
+  display_name: Ensure Elasticsearch Domain encryption at rest is enabled
+  name: gomboc-ai/cloudformation/aws/aws--elasticsearch--domain/ensure-encryption-at-rest-enabled
+spec:
+  template:
+    language: cloudformation-yaml
+    audit_language: ast
+
+  rules:
+    - name: Missing EncryptionAtRestOptions block
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @_unique_resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_resource_type_key
+                      (flow_node) @_resource_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          [
+                            (block_mapping_pair
+                              (flow_node) @key
+                              (_)
+                            )
+                            (comment)
+                          ]*
+                          (#not-eq? @key "EncryptionAtRestOptions")
+                        )
+                      ) @properties
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_resource_type_key "Type")
+          (#eq? @_resource_type_value "AWS::Elasticsearch::Domain")
+          (#eq? @_properties_key "Properties")
+        )
+      remediation:
+        - command: insert_after
+          path: properties
+          flags:
+            indent: "      "
+          value: |
+            EncryptionAtRestOptions:
+              Enabled: true
+
+    - name: EncryptionAtRestOptions present but Enabled absent
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @_unique_resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_resource_type_key
+                      (flow_node) @_resource_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_encryption_options_key
+                            (block_node
+                              (block_mapping
+                                [
+                                  (block_mapping_pair
+                                    (flow_node) @key
+                                    (_)
+                                  )
+                                  (comment)
+                                ]*
+                                (#not-eq? @key "Enabled")
+                              )
+                            ) @encryption_options
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_resource_type_key "Type")
+          (#eq? @_resource_type_value "AWS::Elasticsearch::Domain")
+          (#eq? @_properties_key "Properties")
+          (#eq? @_encryption_options_key "EncryptionAtRestOptions")
+        )
+      remediation:
+        - command: insert_after
+          path: encryption_options
+          flags:
+            indent: "        "
+          value: "Enabled: true"
+
+    - name: EncryptionAtRestOptions Enabled set to falsy value
+      audit: |
+        (block_mapping_pair
+          (flow_node) @_section
+          (block_node
+            (block_mapping
+              (block_mapping_pair
+                (flow_node) @_unique_resource_name
+                (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      (flow_node) @_resource_type_key
+                      (flow_node) @_resource_type_value
+                    )
+                    (block_mapping_pair
+                      (flow_node) @_properties_key
+                      (block_node
+                        (block_mapping
+                          (block_mapping_pair
+                            (flow_node) @_encryption_options_key
+                            (block_node
+                              (block_mapping
+                                (block_mapping_pair
+                                  (flow_node) @_enabled_key
+                                  (flow_node) @enabled_value
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (#eq? @_section "Resources")
+          (#eq? @_resource_type_key "Type")
+          (#eq? @_resource_type_value "AWS::Elasticsearch::Domain")
+          (#eq? @_properties_key "Properties")
+          (#eq? @_encryption_options_key "EncryptionAtRestOptions")
+          (#eq? @_enabled_key "Enabled")
+          (#match? @enabled_value "^(false|False|FALSE|no|No|NO|off|Off|OFF|n|N|0|\"false\"|\"False\"|\"FALSE\"|\"no\"|\"No\"|\"NO\"|\"off\"|\"Off\"|\"OFF\"|\"n\"|\"N\"|\"0\"|'false'|'False'|'FALSE'|'no'|'No'|'NO'|'off'|'Off'|'OFF'|'n'|'N'|'0')$")
+        )
+      remediation:
+        - command: replace
+          path: enabled_value
+          value: "true"
+
+type: Ruleset
+version: v1

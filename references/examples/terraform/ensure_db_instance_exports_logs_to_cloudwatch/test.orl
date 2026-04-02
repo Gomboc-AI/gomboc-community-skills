@@ -1,0 +1,28 @@
+
+# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: Ensure DB Instance exports logs to CloudWatch
+  priority: 1
+spec:
+  rulespace: .
+  cases:
+  - name: Ensure DB Instance exports logs to CloudWatch with Agent Generated Test Cases
+    language: terraform
+    workspace:
+      path: ./workspace
+    remediated_workspace:
+      path: ./workspace_expected
+    expected_report:
+      errors: []
+  - name: Ensure DB Instance exports logs to CloudWatch with IAM Database Authentication Enabled
+    language: terraform
+    workspace:
+      path: ./workspace_with_iam_auth
+    remediated_workspace:
+      path: ./workspace_with_iam_auth_expected
+    expected_report:
+      errors: []
+

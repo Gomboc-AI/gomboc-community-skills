@@ -1,0 +1,19 @@
+type: Test
+version: v1
+metadata:
+  name: CKV_AWS_5 Elasticsearch Encryption At Rest
+  priority: 1
+spec:
+  rulespace: "."
+  cases:
+    - name: violations
+      language: cloudformation-yaml
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./workspace_expected
+      expected_report:
+        rules_applied: 3
+        findings: 30
+        fixes: 30
+        errors: []

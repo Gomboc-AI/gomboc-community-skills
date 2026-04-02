@@ -1,0 +1,193 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+metadata:
+    annotations:
+        contributed-by: gomboc-ai
+        gomboc-ai/visibility: "public"
+        gomboc-ai/public-rule-bodies: "true"
+        gomboc-ai/provider: AWS
+        gomboc-ai/resource: AWS::AmazonMQ::Broker
+        gomboc-ai/reviewer/name: John Kamenik
+        gomboc-ai/reviewer/date: 2025-10-18
+        gomboc-ai/reviewer/status: valid
+        gomboc-ai/configoption/capability/id: a21e8f06-4c14-45a4-ab23-85f545f02e3d
+        gomboc-ai/configoption/capability/timestamp: "2023-04-06T17:55:26Z"
+        gomboc-ai/configoption/capability/title: Encryption At-Rest with Provider Managed Key
+        gomboc-ai/configoption/capability/updated-by: jonathan@gomboc.ai
+        gomboc-ai/configoption/code-fix-id: ee6e07482b40db3b94a6ec6b800916e1e741ad36f4da63c1a7aa8d562e80f357
+        gomboc-ai/configoption/code-resource-id: AWS::AmazonMQ::Broker
+        gomboc-ai/configoption/graph: |-
+            ```mermaid
+            flowchart TD
+              S0(AWS::AmazonMQ::Broker)
+              T0(AWS::AmazonMQ::Broker-EncryptionOptions)
+              T1(AWS::AmazonMQ::Broker.EncryptionOptions)
+              T2(AWS::AmazonMQ::Broker.EncryptionOptions-UseAwsOwnedKey)
+              T3(Capability)
+              S0 -->|HasProperty| T0
+              T0 -->|IsOfType| T1
+              T1 -->|HasProperty| T2
+              T2 -->|ImplementsIfAbsent| T3
+            ```
+        gomboc-ai/configoption/graph-path: /AWS::AmazonMQ::Broker/AWS::AmazonMQ::Broker-EncryptionOptions/AWS::AmazonMQ::Broker.EncryptionOptions/AWS::AmazonMQ::Broker.EncryptionOptions-UseAwsOwnedKey
+        gomboc-ai/configoption/id: ""
+        gomboc-ai/configoption/resource-key: CfnResourceTypeDefinition:AWS::AmazonMQ::Broker
+        use-case-1: "git@github.com:Gomboc-AI/orl-rules.git;main;/config_options/2025-09-04/rules/00ca1cf522bccb42f95f4a17c8db67f77f1c480d9ff1edeba362d32f75133112"
+        gomboc-ai/example: |-
+          ```diff
+          Resources:
+            ExampleBroker:
+              Type: AWS::AmazonMQ::Broker
+              Properties:
+                BrokerName: example-broker
+                BrokerInstanceType: mq.t3.micro
+                DeploymentMode: SINGLE_INSTANCE
+                EngineType: ActiveMQ
+                EngineVersion: "5.17.6"
+                PubliclyAccessible: false
+                Users:
+                  - Username: admin
+                    Password: SecurePassword123!
+          +     EncryptionOptions:
+          +       UseAwsOwnedKey: true
+
+            ExampleBroker2:
+              Type: AWS::AmazonMQ::Broker
+              Properties:
+                BrokerName: example-broker-2
+                BrokerInstanceType: mq.t3.micro
+                DeploymentMode: SINGLE_INSTANCE
+                EngineType: ActiveMQ
+                EngineVersion: "5.17.6"
+                PubliclyAccessible: false
+                Users:
+                  - Username: admin
+                    Password: SecurePassword123!
+                EncryptionOptions:
+          -       UseAwsOwnedKey: false
+          +       UseAwsOwnedKey: true
+          ```
+
+        gomboc-ai/impact/score: medium
+        gomboc-ai/impact/statement-plain: "Configures the Amazon MQ Broker to utilize an AWS-owned KMS key for encryption at rest. This ensures that sensitive data stored on the broker is protected, aligning with security best practices and compliance requirements for data protection."
+        gomboc-ai/impact/statement: |
+          ## Impact
+          
+          Configures the Amazon MQ Broker to utilize an AWS-owned KMS key for encryption at rest. This ensures that sensitive data stored on the broker is protected, aligning with security best practices and compliance requirements for data protection.
+
+        gomboc-ai/risk/score: high
+        gomboc-ai/risk/statement-plain: "Modifying the EncryptionOptions property for an AWS::AmazonMQ::Broker triggers a resource replacement. This action carries significant operational risks: downtime, data loss, and endpoint changes."
+        gomboc-ai/risk/statement: |
+          ## Risk
+          
+          Modifying the `EncryptionOptions` property for an `AWS::AmazonMQ::Broker` triggers a **resource replacement**. This action carries significant operational risks:
+          * **Downtime:** The broker will be unavailable while the new resource is provisioned.
+          * **Data Loss:** Messages currently stored in the queues will likely be lost.
+          * **Endpoint Changes:** The new broker will generate new connection endpoints, requiring updates to downstream client configurations.
+
+        gomboc-ai/description-plain: Ensures that encryption at rest is enabled for the Amazon MQ Broker using a provider-managed key.
+    classifications:
+        - gomboc-ai/cis/controls_8-1-2/3_data_protection/3-11_encrypt_sensitive_data_at_rest
+        - gomboc-ai/policy/encryption/encryption_at_rest/encryption_at_rest_with_provider_managed_key
+    description: |
+      ## Description
+
+      Ensures that encryption at rest is enabled for the Amazon MQ Broker using a provider-managed key.
+    display_name: Encryption At-Rest with Provider Managed Key for AWS::AmazonMQ::Broker
+    name: gomboc-ai/encryption_at-rest_with_provider_managed_key_for_aws--amazonmq--broker
+    priority: 1500000
+spec:
+    template:
+      language: cloudformation-yaml
+      audit_language: ast
+
+    rules:
+      - name: Missing EncryptionOptions
+        audit: |
+          (block_mapping_pair
+            (flow_node) @section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @unique_resource_name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @resource_type_key
+                        (flow_node) @resource_type_value
+                      )
+                      (block_mapping_pair
+                        (flow_node) @properties_key
+                        (block_node) @properties
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @section "Resources")
+            (#eq? @resource_type_key "Type")
+            (#eq? @resource_type_value "AWS::AmazonMQ::Broker")
+            (#eq? @properties_key "Properties")
+            (#not-match? @properties "EncryptionOptions")
+          )
+        remediation:
+          - command: insert_after
+            path: properties
+            flags:
+              indent: "      "
+            value: |
+              EncryptionOptions:
+                UseAwsOwnedKey: true
+
+      - name: Incorrect UseAwsOwnedKey value
+        audit: |
+          (block_mapping_pair
+            (flow_node) @section
+            (block_node
+              (block_mapping
+                (block_mapping_pair
+                  (flow_node) @unique_resource_name
+                  (block_node
+                    (block_mapping
+                      (block_mapping_pair
+                        (flow_node) @resource_type_key
+                        (flow_node) @resource_type_value
+                      )
+                      (block_mapping_pair
+                        (flow_node) @properties_key
+                        (block_node
+                          (block_mapping
+                            (block_mapping_pair
+                              (flow_node) @encryption_options_key
+                              (block_node
+                                (block_mapping
+                                  (block_mapping_pair
+                                    (flow_node) @use_aws_owned_key_key
+                                    (flow_node) @use_aws_owned_key_value
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (#eq? @section "Resources")
+            (#eq? @resource_type_key "Type")
+            (#eq? @resource_type_value "AWS::AmazonMQ::Broker")
+            (#eq? @properties_key "Properties")
+            (#eq? @encryption_options_key "EncryptionOptions")
+            (#eq? @use_aws_owned_key_key "UseAwsOwnedKey")
+            (#not-eq? @use_aws_owned_key_value "true")
+          )
+        remediation:
+          - command: replace
+            path: use_aws_owned_key_value
+            value: "true"
+type: Ruleset
+version: v1

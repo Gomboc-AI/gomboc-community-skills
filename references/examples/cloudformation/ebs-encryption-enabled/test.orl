@@ -1,0 +1,20 @@
+---
+type: Test
+version: v1
+metadata:
+  name: ebs-encryption-enabled
+  priority: 1
+spec:
+  rulespace: .
+  cases:
+    - name: ebs-encryption-enabled
+      language: cloudformation-yaml
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./workspace_expected
+      expected_report:
+        rules_applied: 2
+        findings: 19
+        fixes: 19
+        errors: []

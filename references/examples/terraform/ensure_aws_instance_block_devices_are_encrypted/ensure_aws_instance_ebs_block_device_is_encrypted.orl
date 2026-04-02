@@ -1,0 +1,129 @@
+# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  annotations:
+    contributed-by: gomboc-ai
+    use-case-1: git@github.com:Gomboc-AI/orl-rules.git;main;/checkov/terraform/rules/CKV_AWS_8-aws_instance
+    gomboc-ai/provider: AWS
+    gomboc-ai/resource: aws_instance
+    gomboc-ai/source: checkov
+    gomboc-ai/language: terraform
+
+    gomboc-ai/risk/score: high
+    gomboc-ai/risk/statement: |
+      ## Risk
+
+      Enabling encryption on an existing EC2 instance is a destructive change. Because AWS cannot encrypt an existing volume in-place, Terraform will force a replacement of the resource.
+
+      This results in:
+        - **Immediate Downtime**: The running instance will be terminated and a new one provisioned.
+        - **Data Loss**: Any data stored on the root volume (and attached EBS volumes defined in the resource) will be permanently deleted upon destruction unless a snapshot is manually created and restored.
+
+    gomboc-ai/impact/score: high
+    gomboc-ai/impact/statement: |
+      ## Impact
+
+      Enabling encryption on ebs_block_device secures the application's persistent data layer, ensuring that critical business data—such as databases, application logs, and customer files—is protected by AES-256 encryption. This action mitigates the risk of data exfiltration through unauthorized volume attachment or snapshot cloning. Secondary EBS volumes typically host the actual state and sensitive data of an application. Leaving these volumes unencrypted is a critical vulnerability that exposes the organization to data breaches and regulatory fines, making this rule essential for any production environment.
+
+    gomboc-ai/risk/statement-plain: "Enabling encryption on an existing EC2 instance is a destructive change. Because AWS cannot encrypt an existing volume in-place, Terraform will force a replacement of the resource. This results in Immediate Downtime: The running instance will be terminated and a new one provisioned. Data Loss: Any data stored on the root volume (and attached EBS volumes defined in the resource) will be permanently deleted upon destruction unless a snapshot is manually created and restored."
+
+    gomboc-ai/impact/statement-plain: "Enabling encryption on ebs_block_device secures the application's persistent data layer, ensuring that critical business data—such as databases, application logs, and customer files—is protected by AES-256 encryption. This action mitigates the risk of data exfiltration through unauthorized volume attachment or snapshot cloning. Secondary EBS volumes typically host the actual state and sensitive data of an application. Leaving these volumes unencrypted is a critical vulnerability that exposes the organization to data breaches and regulatory fines, making this rule essential for any production environment."
+
+    gomboc-ai/description-plain: Ensure all data stored in the ebs_block_device of an AWS instance is encrypted.
+
+    gomboc-ai/reviewer/date: 2025-11-26
+    gomboc-ai/reviewer/name: Zach Talarick
+    gomboc-ai/reviewer/status: valid
+
+    gomboc-ai/checkov/date: 2025-11-10
+    gomboc-ai/checkov/id: CKV_AWS_8
+    gomboc-ai/checkov/name: Ensure all data stored in the Launch configuration or instance Elastic Blocks Store is securely encrypted
+
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/example: |-
+      ```diff
+      resource "aws_instance" "example" {
+        ami = "ami-0c55b159cbfafe1f0"
+        instance_type = "t3.micro"
+
+        ebs_block_device {
+          encrypted = true
+        }
+
+        ebs_block_device {
+        device_name = "/dev/xvda"
+
+      + encrypted = true
+        }
+      }
+
+      resource "aws_instance" "example2" {
+        ami = "ami-0c55b159cbfafe1f0"
+        instance_type = "t3.micro"
+
+        ebs_block_device {
+          encrypted = true
+        }
+
+        ebs_block_device {
+          device_name = "/dev/xvda"
+      -   encrypted = false
+      +   encrypted = true
+        }
+      }
+      ```
+
+  priority: 1300200
+  classifications:
+    - gomboc-ai/policy/encryption/at_rest
+    - gomboc-ai/cis/controls_8-1-2/3_data_protection/3-11_encrypt_sensitive_data_at_rest
+    - gomboc-ai/policy/encryption/encryption_at_rest/encryption_at_rest_with_customer_managed_key
+    - gomboc-ai/policy/encryption/encryption_at_rest/encryption_at_rest_with_provider_managed_key
+
+  name: gomboc-ai/ensure-aws_instance-ebs_block_device-is-encrypted
+  display_name: Ensure all data stored in the ebs_block_device of an AWS instance is encrypted
+  description: |
+    ## Description
+
+    Ensure all data stored in the ebs_block_device of an AWS instance is encrypted.
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+  rules:
+  - name: ensure-aws_instance-ebs_block_device-is-encrypted-when-it-is-explicitly-set-to-false
+    audit: |
+      {{ aResource("aws_instance", aBlock("ebs_block_device", anAttributeValueEq("encrypted", "false"))) }}
+    remediation:
+      - command: replace
+        path: value
+        value: "true"
+
+  - name: ensure-aws_instance-ebs_block_device-is-encrypted-when-it-is-missing
+    audit: |
+      {{ aResource("aws_instance", aBlock("ebs_block_device", aMissingAttribute("encrypted"))) }}
+    skip_finding: "hasSubString(finding.body, \"snapshot_id\")"
+    remediation:
+      - command: insert_after
+        path: block_body
+        flags:
+          indent: "    "
+          prefix: "\n\n"
+        value: |
+          encrypted = true
+
+  - name: Add customer managed key when it is missing
+    audit: |
+      {{ aResource("aws_instance", aBlock("ebs_block_device", aMissingAttribute("kms_key_id"))) }}
+    skip_finding: "vars.default?.aws_instance_ebs_block_device_cmk_kms_key_id == nil || hasSubString(finding.body, \"snapshot_id\")"
+    remediation:
+      - command: insert_after
+        path: block_body
+        flags:
+          indent: "    "
+          prefix: "\n\n"
+        value: |
+          kms_key_id = "{{ vars.default.aws_instance_ebs_block_device_cmk_kms_key_id }}"
