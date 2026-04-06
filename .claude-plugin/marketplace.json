@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "gomboc-community",
+      "name": "gomboc-orl",
       "source": "./",
-      "description": "Fix code with skills to remediate with existing rules and create, test, and publish ORL rules for Terraform, CloudFormation, and Bicep",
-      "version": "1.0.0"
+      "description": "Scan, fix, and create ORL rules for Terraform, HCL, CloudFormation, Bicep, Dockerfile, Kubernetes, and Python",
+      "version": "2.0.0"
     }
   ]
 }

@@ -1,0 +1,44 @@
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/ensure_requests_ssl_verification
+  display_name: Ensure Requests SSL Verification Enabled
+  description: |
+    ## Description
+
+    Ensures that Python `requests` library calls do not disable SSL
+    certificate verification by passing `verify=False`. Disabling
+    verification exposes the application to man-in-the-middle attacks.
+  classifications:
+    - gomboc-ai/policy/encryption/encryption_in_transit/enforce_ssl_connections
+  annotations:
+    contributed-by: gomboc-community
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/description-plain: "Ensure Python requests calls use verify=True for SSL certificate verification."
+spec:
+  template:
+    language: python
+    audit_language: ast
+  rules:
+    - name: flag-verify-false
+      audit: |
+        (call
+          function: (attribute
+            object: (identifier) @_module
+            attribute: (identifier) @_method
+          )
+          arguments: (argument_list
+            (keyword_argument
+              name: (identifier) @_kwarg
+              value: (false) @value
+            )
+          )
+        )
+        (#eq? @_module "requests")
+        (#match? @_method "get|post|put|patch|delete|head|options")
+        (#eq? @_kwarg "verify")
+      remediation:
+        - command: replace
+          path: value
+          value: "True"

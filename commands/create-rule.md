@@ -19,8 +19,8 @@ docker run -v "${PWD}:/workspace" gombocai/orl <command> [args...]
 
 The user provides:
 - A description of the security/compliance policy to enforce
-- The target IaC language: `terraform`, `cloudformation-yaml`, or `bicep`
-- The target cloud resource type
+- The target language: `terraform`, `hcl`, `cloudformation-yaml`, `cloudformation-json`, `bicep`, `docker`, `kubernetes`, or `python`
+- The target resource type or code construct
 
 ## Workflow
 
@@ -79,13 +79,25 @@ If no, inform the user the rule is complete and ready for local use or manual pu
 ## Example Usage
 
 ```
-/gomboc-orl-community:create-rule Ensure all AWS S3 buckets have server-side encryption enabled using Terraform
+/gomboc-community:create-rule Ensure all AWS S3 buckets have server-side encryption enabled using Terraform
 ```
 
 ```
-/gomboc-orl-community:create-rule Ensure Azure Storage Accounts require HTTPS only using Bicep
+/gomboc-community:create-rule Ensure Azure Storage Accounts require HTTPS only using Bicep
 ```
 
 ```
-/gomboc-orl-community:create-rule Ensure CloudFormation Elasticsearch domains have encryption at rest
+/gomboc-community:create-rule Ensure CloudFormation Elasticsearch domains have encryption at rest
+```
+
+```
+/gomboc-community:create-rule Ensure Dockerfiles use pinned image digests instead of mutable tags
+```
+
+```
+/gomboc-community:create-rule Ensure Kubernetes Deployments set runAsNonRoot in securityContext
+```
+
+```
+/gomboc-community:create-rule Ensure Python requests calls use verify=True for SSL
 ```

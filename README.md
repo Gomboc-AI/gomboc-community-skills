@@ -1,6 +1,6 @@
 # Gomboc ORL Community Skills
 
-A Claude Code plugin for remediating your code deterministically with Gomboc Open Remediation Language (ORL). Enables creating, testing, and publishing ORL (Open Remediation Language) rules for Infrastructure as Code. Supports Terraform, CloudFormation YAML, and Bicep. Provides skills for remediating code with available rules.
+A Claude Code plugin for scanning, fixing, and creating ORL (Open Remediation Language) rules across Infrastructure as Code, containers, orchestration, and application code. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
 
 ## Prerequisites
 
@@ -46,44 +46,77 @@ claude plugin install gomboc-orl-community@gomboc-community-marketplace
 claude plugin install /path/to/community-skills
 ```
 
+## Commands
+
+### `/fix` — Scan and Fix Code
+
+Scan source code for security anti-patterns and compliance gaps using the ORL classification policy corpus, then apply fixes — using existing rules or generating new ones on the fly. Optionally save fixes as reusable rules.
+
+```
+/gomboc-community:fix main.tf — check encryption
+/gomboc-community:fix ./infrastructure/ — security review
+/gomboc-community:fix Dockerfile
+/gomboc-community:fix k8s/ — least privilege
+/gomboc-community:fix src/api/ — prevent code injection
+/gomboc-community:fix . — CIS compliance check
+```
+
+**Workflow:** diagnose → select issues → apply fixes → optionally save as rules
+
+### `/create-rule` — Create a Rule from Scratch
+
+Define a security or compliance policy and build a complete ORL rule package with tests.
+
+```
+/gomboc-community:create-rule Ensure all AWS S3 buckets have server-side encryption enabled using Terraform
+/gomboc-community:create-rule Ensure Dockerfiles use pinned image digests instead of mutable tags
+/gomboc-community:create-rule Ensure Kubernetes Deployments set runAsNonRoot in securityContext
+```
+
+**Workflow:** plan → build → add metadata → optionally push
+
 ## Skills
 
 | Skill | Description |
 |-------|-------------|
+| `diagnose` | Classification-driven analyzer — detects language, loads matching policies, walks the AST, reports prioritized findings |
+| `apply-fix` | Applies a fix using an existing ORL rule or generates a new one, with optional save-as-rule |
 | `plan-rule` | Analyze requirements, identify test cases, and create a plan for an ORL rule |
 | `build-rule` | Create workspace files, write the ORL rule, and test it |
 | `add-metadata` | Add basic metadata (name, description, classifications, provider) to a rule |
 | `push-rule` | Push a completed rule to the Gomboc Rules Service |
-
-## Quick Start
-
-Use the `/gomboc-orl-community:create-rule` command to run the full workflow:
-
-```
-/gomboc-orl-community:create-rule Ensure all AWS S3 buckets have server-side encryption enabled using Terraform
-```
-
-Or invoke individual skills:
-
-```
-/gomboc-orl-community:plan-rule
-/gomboc-orl-community:build-rule
-/gomboc-orl-community:add-metadata
-/gomboc-orl-community:push-rule
-```
+| `cleanup-rule` | Evaluate a rule package against release standards and produce a detailed remediation checklist |
 
 ## Supported Languages
 
-- **Terraform** (HCL) — Full template helper support (`aResource`, `anAttribute`, `aMissingAttribute`, etc.)
-- **CloudFormation YAML** — Raw tree-sitter queries for YAML AST
-- **Bicep** — Raw tree-sitter queries for Bicep AST
+| Language | ORL Language ID | Use Case |
+|----------|----------------|----------|
+| Terraform | `terraform` | AWS, Azure, GCP infrastructure |
+| HCL | `hcl` | Terragrunt, Packer, Consul, Vault configs |
+| CloudFormation YAML | `cloudformation-yaml` | AWS infrastructure (YAML format) |
+| CloudFormation JSON | `cloudformation-json` | AWS infrastructure (JSON format) |
+| Bicep | `bicep` | Azure infrastructure |
+| Dockerfile | `docker` | Container image definitions |
+| Kubernetes | `kubernetes` | K8s manifests (Deployments, Pods, Services, etc.) |
+| Python | `python` | Application code, AWS CDK, Pulumi, SDK usage |
+
+## Classification-Driven Analysis
+
+The `/fix` command uses the ORL classification policy corpus (`/orl-rules/final/classifications/policies/`) as its knowledge base. Each classification YAML defines:
+
+- What security or compliance policy to enforce
+- Which languages and resource types it applies to
+- Impact and risk scores for prioritization
+- Compliance framework mappings (CIS, NIST CSF, PCI-DSS, AWS Well-Architected, etc.)
+
+Adding new classification YAMLs automatically extends what `/fix` can detect — no plugin changes needed.
 
 ## Publishing Rules
 
 To push rules to your Gomboc Community Edition account:
 
 1. Set your Personal Access Token: `export RULE_SERVICE_TOKEN=your-pat-here`
-2. Run `/gomboc-orl-community:push-rule` from your rule directory
+2. Run `/gomboc-community:push-rule` from your rule directory
 
 ## Rule Package Structure
 
@@ -93,8 +126,8 @@ Each rule is a self-contained directory:
 my-rule/
 ├── my-rule.orl            # Main rule file
 ├── test.orl               # Test definition
-├── workspace/             # IaC files with violations
-└── workspace_expected/    # IaC files after remediation
+├── workspace/             # Source files with violations
+└── workspace_expected/    # Source files after remediation
 ```
 
 ## License
