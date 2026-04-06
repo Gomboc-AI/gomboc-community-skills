@@ -1,0 +1,40 @@
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/ensure_container_resource_limits
+  display_name: Ensure Container Resource Limits Set
+  description: |
+    ## Description
+
+    Ensures that Kubernetes container specs include resource limits
+    (CPU and memory) to prevent unbounded resource consumption and
+    support capacity planning.
+  classifications:
+    - gomboc-ai/policy/surface_area/capacity_planning_and_resilience
+  annotations:
+    contributed-by: gomboc-community
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/description-plain: "Ensure Kubernetes containers have resource limits defined."
+spec:
+  template:
+    language: kubernetes
+    audit_language: ast
+  rules:
+    - name: flag-missing-resource-limits
+      audit: |
+        (block_mapping_pair
+          key: (flow_node) @_key
+          value: (block_node
+            (block_sequence
+              (block_sequence_item
+                (block_node
+                  (block_mapping) @container_spec
+                )
+              )
+            )
+          )
+        )
+        (#eq? @_key "containers")
+      skip_finding: |
+        finding.container_spec matches "limits"

@@ -1,0 +1,29 @@
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/ensure_no_eval_calls
+  display_name: Ensure No eval() Calls in Python
+  description: |
+    ## Description
+
+    Detects usage of Python's `eval()` built-in function, which can execute
+    arbitrary code and is a common vector for code injection attacks.
+  classifications:
+    - gomboc-ai/policy/secure_management/prevent_code_injection
+  annotations:
+    contributed-by: gomboc-community
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/description-plain: "Detect usage of eval() in Python code."
+spec:
+  template:
+    language: python
+    audit_language: ast
+  rules:
+    - name: flag-eval-call
+      audit: |
+        (call
+          function: (identifier) @_func
+          arguments: (argument_list) @args
+        ) @eval_call
+        (#eq? @_func "eval")

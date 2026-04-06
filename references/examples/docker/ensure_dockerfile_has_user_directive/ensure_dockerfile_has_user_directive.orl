@@ -1,0 +1,32 @@
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/ensure_dockerfile_has_user_directive
+  display_name: Ensure Dockerfile Sets Non-Root User
+  description: |
+    ## Description
+
+    Ensures that Dockerfiles include a USER directive to avoid running containers
+    as root, following the principle of least privilege.
+  classifications:
+    - gomboc-ai/policy/secure_management/least_privilege
+  annotations:
+    contributed-by: gomboc-community
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/description-plain: "Ensure Dockerfiles include a USER directive to avoid running as root."
+spec:
+  template:
+    language: docker
+    audit_language: ast
+  rules:
+    - name: flag-missing-user-directive
+      audit: |
+        (source_file) @root
+      skip_finding: |
+        finding.root matches "USER"
+      remediation:
+        - command: insert_before
+          path: root
+          value: |
+            USER nobody

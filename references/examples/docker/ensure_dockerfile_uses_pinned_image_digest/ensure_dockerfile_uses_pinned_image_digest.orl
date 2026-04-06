@@ -1,0 +1,32 @@
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/ensure_dockerfile_uses_pinned_image_digest
+  display_name: Ensure Dockerfile Uses Pinned Image Digest
+  description: |
+    ## Description
+
+    Ensures that Dockerfile FROM instructions use pinned image digests (@sha256:...)
+    instead of mutable tags like :latest or version tags that can be overwritten.
+  classifications:
+    - gomboc-ai/policy/secure_management/supply_chain_protection/immutable_docker_image_tags
+  annotations:
+    contributed-by: gomboc-community
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/description-plain: "Ensure Dockerfile FROM instructions use pinned image digests instead of mutable tags."
+spec:
+  template:
+    language: docker
+    audit_language: ast
+  rules:
+    - name: flag-mutable-image-tag
+      audit: |
+        (from_instruction
+          (image_spec
+            name: (image_name) @_name
+            tag: (image_tag
+              (image_tag) @tag
+            )
+          )
+        )

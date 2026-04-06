@@ -1,6 +1,6 @@
 ---
 name: plan-rule
-description: Plan an ORL rule by analyzing requirements, researching the target resource, identifying test cases, and creating before/after code samples. Supports Terraform, CloudFormation YAML, and Bicep.
+description: Plan an ORL rule by analyzing requirements, researching the target resource, identifying test cases, and creating before/after code samples. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
 ---
 
 # Plan an ORL Rule
@@ -9,11 +9,16 @@ You are a planning expert for ORL (Open Remediation Language) rules. Your job is
 
 ## Supported Languages
 
-| Language | Provider | ORL Language ID |
-|----------|----------|-----------------|
+| Language | Provider / Context | ORL Language ID |
+|----------|-------------------|-----------------|
 | Terraform (HCL) | AWS, Azure, GCP | `terraform` |
+| HCL (Terragrunt, Packer, etc.) | AWS, Azure, GCP | `hcl` |
 | CloudFormation YAML | AWS | `cloudformation-yaml` |
+| CloudFormation JSON | AWS | `cloudformation-json` |
 | Bicep | Azure | `bicep` |
+| Dockerfile | Docker / container | `docker` |
+| Kubernetes YAML | Kubernetes | `kubernetes` |
+| Python | AWS CDK, Pulumi, application code | `python` |
 
 ## Workflow
 
@@ -30,8 +35,12 @@ Identify from the user's request:
 Search for official documentation on the target resource. Use these search strategies:
 
 - **Terraform**: `site:registry.terraform.io/providers/ <resource_type>`
+- **HCL/Terragrunt**: `site:terragrunt.gruntwork.io/ <block_type>` or relevant HashiCorp docs
 - **CloudFormation**: `site:docs.aws.amazon.com/AWSCloudFormation/ <resource_type>`
 - **Bicep/ARM**: `site:learn.microsoft.com/en-us/azure/templates/ <resource_type>`
+- **Dockerfile**: `site:docs.docker.com/reference/dockerfile/ <directive>`
+- **Kubernetes**: `site:kubernetes.io/docs/reference/ <resource_kind>`
+- **Python**: Official SDK docs for the target library (boto3, aws-cdk-lib, pulumi, requests, etc.)
 
 Identify:
 - The property or attribute that needs to be enforced
@@ -65,8 +74,13 @@ Create a test case specification table covering these scenarios:
 **Language-specific gotchas to consider:**
 
 - **Terraform**: Variable references (`var.x`), `true`/`false` are unquoted booleans, `count` vs `for_each` may create multiple instances, dynamic blocks
+- **HCL/Terragrunt**: `include` blocks pull in parent configs, `dependency` outputs may override `inputs`, string templates (`"${...}"`) vs bare references
 - **CloudFormation YAML**: Boolean variants (`true`, `True`, `TRUE`, `yes`, `Yes`, `no`, `"true"`, `'true'` — 18+ forms), short-form intrinsic functions (`!Ref` vs `Ref:`), property absence vs `AWS::NoValue`
+- **CloudFormation JSON**: All values are strings or nested objects — booleans are JSON `true`/`false`, no YAML alias variants
 - **Bicep**: Parameter references, ternary expressions (`isProd ? true : false`), `existing` keyword (no properties to remediate), string interpolation, single quotes for strings
+- **Dockerfile**: Multi-stage builds (multiple `FROM` — scope to final stage for `USER` checks), `ARG` before `FROM` has different scope, shell form vs exec form for `RUN`/`CMD`/`ENTRYPOINT`
+- **Kubernetes**: Multiple documents in one file (`---` separator), `securityContext` at Pod vs container level, `initContainers` vs `containers`, label selectors coupling Services to Deployments
+- **Python**: `True`/`False`/`None` are capitalized, f-strings vs `.format()` vs `%` formatting, keyword args vs positional args, decorator patterns, class inheritance for SDK constructs
 
 ### Step 5: Output the Plan
 

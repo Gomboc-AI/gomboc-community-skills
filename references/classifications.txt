@@ -8,6 +8,10 @@ gomboc-ai/policy/authentication/sso
 gomboc-ai/policy/authentication/username_and_password_authentication
 gomboc-ai/policy/authorization
 gomboc-ai/policy/authorization/iam_resource_policy
+gomboc-ai/policy/cost_management
+gomboc-ai/policy/cost_management/budgets_cost_allocation_and_tagging
+gomboc-ai/policy/cost_management/compute_right_sizing_and_autoscaling
+gomboc-ai/policy/cost_management/standard_storage_classes
 gomboc-ai/policy/disaster_recovery
 gomboc-ai/policy/disaster_recovery/automatic_backups
 gomboc-ai/policy/drift_management
@@ -28,7 +32,10 @@ gomboc-ai/policy/secure_management
 gomboc-ai/policy/secure_management/accidental_deletion_protection
 gomboc-ai/policy/secure_management/accidental_deletion_protection/deletion_protection
 gomboc-ai/policy/secure_management/accidental_deletion_protection/skip_terraform_destroy
+gomboc-ai/policy/secure_management/best_practice
 gomboc-ai/policy/secure_management/continuous_reconciliation
+gomboc-ai/policy/secure_management/least_privilege
+gomboc-ai/policy/secure_management/prevent_code_injection
 gomboc-ai/policy/secure_management/sensitive_information_handling
 gomboc-ai/policy/secure_management/sensitive_information_handling/application_configuration_via_environment_variables
 gomboc-ai/policy/secure_management/sensitive_information_handling/dedicated_tenancy
@@ -39,9 +46,12 @@ gomboc-ai/policy/secure_management/supply_chain_protection
 gomboc-ai/policy/secure_management/supply_chain_protection/customer_code_deployment_via_lambda_layers
 gomboc-ai/policy/secure_management/supply_chain_protection/immutable_docker_image_tags
 gomboc-ai/policy/secure_management/supply_chain_protection/library_caching_service
+gomboc-ai/policy/secure_management/workload_isolation
 gomboc-ai/policy/secure_networking
 gomboc-ai/policy/secure_networking/customer_defined_network
+gomboc-ai/policy/secure_networking/least_access
 gomboc-ai/policy/secure_networking/prevent_public_access_via_explicit_setting
+gomboc-ai/policy/secure_networking/prevent_public_access_via_reverse_proxy_or_firewall
 gomboc-ai/policy/surface_area
 gomboc-ai/policy/surface_area/auditing_and_monitoring
 gomboc-ai/policy/surface_area/auditing_and_monitoring/audit_logs
@@ -52,6 +62,7 @@ gomboc-ai/policy/surface_area/auditing_and_monitoring/network_flow_logs
 gomboc-ai/policy/surface_area/auditing_and_monitoring/request_tracing
 gomboc-ai/policy/surface_area/auditing_and_monitoring/security_logs
 gomboc-ai/policy/surface_area/capacity_planning_and_resilience
+gomboc-ai/policy/surface_area/capacity_planning_and_resilience/caching_mechanisms
 gomboc-ai/policy/surface_area/capacity_planning_and_resilience/cost_management
 gomboc-ai/policy/surface_area/capacity_planning_and_resilience/data_deletion_on_customer_defined_schedule
 gomboc-ai/policy/surface_area/capacity_planning_and_resilience/data_lifecycle_management

@@ -1,0 +1,54 @@
+type: Ruleset
+version: v1
+metadata:
+  name: gomboc-ai/ensure_deployment_runs_as_non_root
+  display_name: Ensure Deployment Runs as Non-Root
+  description: |
+    ## Description
+
+    Ensures that Kubernetes Deployments include a securityContext with
+    runAsNonRoot set to true at the Pod level, preventing containers
+    from running as the root user.
+  classifications:
+    - gomboc-ai/policy/secure_management/least_privilege
+  annotations:
+    contributed-by: gomboc-community
+    gomboc-ai/visibility: public
+    gomboc-ai/public-rule-bodies: "true"
+    gomboc-ai/description-plain: "Ensure Kubernetes Deployments set runAsNonRoot in securityContext."
+spec:
+  template:
+    language: kubernetes
+    audit_language: ast
+  rules:
+    - name: flag-missing-run-as-non-root
+      audit: |
+        (block_mapping_pair
+          key: (flow_node) @_kind_key
+          value: (flow_node) @_kind_val
+        )
+        (#eq? @_kind_key "kind")
+        (#eq? @_kind_val "Deployment")
+        (block_mapping_pair
+          key: (flow_node) @_spec_key
+          value: (block_node
+            (block_mapping
+              (block_mapping_pair
+                key: (flow_node) @_template_key
+                value: (block_node
+                  (block_mapping
+                    (block_mapping_pair
+                      key: (flow_node) @_tspec_key
+                      value: (block_node (block_mapping) @pod_spec)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+        (#eq? @_spec_key "spec")
+        (#eq? @_template_key "template")
+        (#eq? @_tspec_key "spec")
+      skip_finding: |
+        finding.pod_spec matches "runAsNonRoot"
