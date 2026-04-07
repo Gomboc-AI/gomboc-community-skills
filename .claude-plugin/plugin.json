@@ -1,6 +1,6 @@
 {
   "name": "gomboc-community",
-  "description": "Scan, fix, and create ORL rules for Terraform, HCL, CloudFormation, Bicep, Dockerfile, Kubernetes, and Python",
+  "description": "Scan, fix, and create ORL rules for all languages supported by the gombocai/orl CLI",
   "version": "2.0.0",
   "author": {
     "name": "Gomboc AI",

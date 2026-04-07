@@ -1,6 +1,6 @@
 # Gomboc ORL Community Skills
 
-A Claude Code plugin for scanning, fixing, and creating ORL (Open Remediation Language) rules across Infrastructure as Code, containers, orchestration, and application code. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
+A Claude Code plugin for scanning, fixing, and creating ORL (Open Remediation Language) rules across IaC, containers, orchestration, and application code. Any `--language` value supported by your `gombocai/orl` image applies — see [ORL supported languages](references/orl-supported-languages.md).
 
 ## Prerequisites
 
@@ -89,16 +89,11 @@ Define a security or compliance policy and build a complete ORL rule package wit
 
 ## Supported Languages
 
-| Language | ORL Language ID | Use Case |
-|----------|----------------|----------|
-| Terraform | `terraform` | AWS, Azure, GCP infrastructure |
-| HCL | `hcl` | Terragrunt, Packer, Consul, Vault configs |
-| CloudFormation YAML | `cloudformation-yaml` | AWS infrastructure (YAML format) |
-| CloudFormation JSON | `cloudformation-json` | AWS infrastructure (JSON format) |
-| Bicep | `bicep` | Azure infrastructure |
-| Dockerfile | `docker` | Container image definitions |
-| Kubernetes | `kubernetes` | K8s manifests (Deployments, Pods, Services, etc.) |
-| Python | `python` | Application code, AWS CDK, Pulumi, SDK usage |
+ORL language IDs are defined by the CLI. The canonical enumerated list for this repo’s baseline is in [references/orl-supported-languages.md](references/orl-supported-languages.md). Confirm the exact set for your Docker image with:
+
+```bash
+docker run gombocai/orl language
+```
 
 ## Classification-Driven Analysis
 
