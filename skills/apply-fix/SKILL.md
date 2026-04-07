@@ -89,6 +89,7 @@ Invoke the appropriate `language-*-expert` skill for AST and syntax guidance whe
 | `hcl` | `language-hcl-expert` |
 | `cloudformation-yaml` | `language-cloudformation-yaml-expert` |
 | `cloudformation-json` | `language-cloudformation-json-expert` |
+| `bicep` | `language-bicep-expert` |
 | `docker` | `language-docker-expert` |
 | `kubernetes` | `language-kubernetes-expert` |
 | `python` | `language-python-expert` |
@@ -149,6 +150,7 @@ spec:
 - **HCL (Terragrunt)**: Use raw HCL tree-sitter queries for `block`, `attribute`, `function_call` nodes
 - **CloudFormation YAML**: Use raw tree-sitter YAML queries (`block_mapping_pair`, `flow_node`)
 - **CloudFormation JSON**: Use JSON tree-sitter queries (`pair`, `object`, `array`)
+- **Bicep**: Use raw tree-sitter queries; for missing properties use `replace` with template interpolation on `props_body`
 - **Dockerfile (`docker`)**: Use Dockerfile tree-sitter grammar — `from_instruction`, `user_instruction`, `run_instruction`, `env_instruction`, `arg_instruction`
 - **Kubernetes**: Use YAML tree-sitter queries scoped by `apiVersion`/`kind` predicates on `block_mapping_pair` nodes
 - **Python**: Use Python tree-sitter grammar — `call`, `import_statement`, `assignment`, `keyword_argument`, `decorated_definition`

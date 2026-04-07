@@ -24,8 +24,8 @@ Throughout this skill, every `orl` command shown follows this pattern.
 - **Expression language**: `../../references/expr-lang.md`
 - **Terraform AST helpers**: `../../references/hcl-ast.md`
 - **CloudFormation YAML AST**: `../../references/yaml-ast.md`
-- **Bicep AST** (legacy samples only): `../../references/bicep-ast.md`
-- **Examples**: `../../references/examples/{terraform,cloudformation,bicep}/` (bicep samples may predate your ORL language list)
+- **Bicep AST**: `../../references/bicep-ast.md`
+- **Examples**: `../../references/examples/{terraform,cloudformation,bicep}/`
 
 ## Development Process
 
@@ -50,7 +50,7 @@ Use the ORL `walk` command to visualize the AST structure of your workspace file
 ```bash
 docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language terraform ./workspace
 docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language cloudformation-yaml ./workspace
-docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language typescript ./workspace
+docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language bicep ./workspace
 ```
 
 This shows the exact tree-sitter node types and structure you need to match in your audit query.
@@ -68,7 +68,7 @@ metadata:
     - gomboc-ai/policy/...
 spec:
   template:
-    language: terraform  # any ORL ID from ../../references/orl-supported-languages.md
+    language: terraform  # or cloudformation-yaml, bicep, or any ORL ID from ../../references/orl-supported-languages.md
     audit_language: ast
   rules:
     - name: descriptive-rule-name
@@ -121,6 +121,7 @@ If tests fail, compare actual vs expected output and adjust the rule or expected
 ```bash
 docker run gombocai/orl language terraform
 docker run gombocai/orl language cloudformation-yaml
+docker run gombocai/orl language bicep
 docker run gombocai/orl language   # lists all supported language IDs for your image
 ```
 
@@ -166,6 +167,43 @@ CloudFormation uses raw tree-sitter YAML queries. No template helpers available.
 - Resources are under `Resources:` section key in the YAML
 
 **AST structure**: `block_mapping_pair` → `flow_node` (key) + `block_node` (value)
+
+## Bicep-Specific Guidance
+
+Bicep uses raw tree-sitter queries. No template helpers available.
+
+**Key mechanics:**
+- Resource type includes API version: `'Microsoft.Storage/storageAccounts@2023-01-01'`
+- Use `#match?` on `string_content` to match type regardless of API version
+- Booleans are only `true`/`false` (no YAML-style variants)
+- Strings use single quotes: `'value'`
+- Properties go inside `properties: { ... }` block
+- `existing` keyword resources have no properties to remediate
+- `insert_after` on an `object` node inserts AFTER the `}` — use `insert_after` on the last `object_property` instead, or use `replace` with template interpolation
+
+**Bicep insert pattern** for missing properties:
+```yaml
+audit: |
+  (resource_declaration
+    (string (string_content) @_type)
+    (object
+      (object_property
+        (identifier) @_props_key
+        (object) @props_body
+      )
+    )
+  ) @resource
+  (#match? @_type "Microsoft\\.Storage/storageAccounts")
+  (#eq? @_props_key "properties")
+skip_finding: |
+  finding.resource matches "targetPropertyName"
+remediation:
+  - command: replace
+    path: props_body
+    value: |-
+      {
+          targetPropertyName: true{{ $.props_body | replace("{", "", 1) }}
+```
 
 ## HCL-Specific Guidance (Terragrunt, Packer, Consul, Vault)
 

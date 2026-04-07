@@ -32,7 +32,7 @@ Search for official documentation on the target resource. Use these search strat
 - **Terraform**: `site:registry.terraform.io/providers/ <resource_type>`
 - **HCL/Terragrunt**: `site:terragrunt.gruntwork.io/ <block_type>` or relevant HashiCorp docs
 - **CloudFormation**: `site:docs.aws.amazon.com/AWSCloudFormation/ <resource_type>`
-- **Azure ARM / templates**: `site:learn.microsoft.com/en-us/azure/templates/ <resource_type>`
+- **Bicep / Azure ARM**: `site:learn.microsoft.com/en-us/azure/templates/ <resource_type>` and Bicep language docs for syntax
 - **Dockerfile**: `site:docs.docker.com/reference/dockerfile/ <directive>`
 - **Kubernetes**: `site:kubernetes.io/docs/reference/ <resource_kind>`
 - **Python**: Official SDK docs for the target library (boto3, aws-cdk-lib, pulumi, requests, etc.)
@@ -72,6 +72,7 @@ Create a test case specification table covering these scenarios:
 - **HCL/Terragrunt**: `include` blocks pull in parent configs, `dependency` outputs may override `inputs`, string templates (`"${...}"`) vs bare references
 - **CloudFormation YAML**: Boolean variants (`true`, `True`, `TRUE`, `yes`, `Yes`, `no`, `"true"`, `'true'` — 18+ forms), short-form intrinsic functions (`!Ref` vs `Ref:`), property absence vs `AWS::NoValue`
 - **CloudFormation JSON**: All values are strings or nested objects — booleans are JSON `true`/`false`, no YAML alias variants
+- **Bicep**: Parameter references, ternary expressions (`isProd ? true : false`), `existing` keyword (no properties to remediate), string interpolation, single quotes for strings
 - **Dockerfile**: Multi-stage builds (multiple `FROM` — scope to final stage for `USER` checks), `ARG` before `FROM` has different scope, shell form vs exec form for `RUN`/`CMD`/`ENTRYPOINT`
 - **Kubernetes**: Multiple documents in one file (`---` separator), `securityContext` at Pod vs container level, `initContainers` vs `containers`, label selectors coupling Services to Deployments
 - **Python**: `True`/`False`/`None` are capitalized, f-strings vs `.format()` vs `%` formatting, keyword args vs positional args, decorator patterns, class inheritance for SDK constructs

@@ -83,7 +83,7 @@ If no, inform the user the rule is complete and ready for local use or manual pu
 ```
 
 ```
-/gomboc-community:create-rule Ensure Azure Storage Accounts require HTTPS only using Terraform (azurerm)
+/gomboc-community:create-rule Ensure Azure Storage Accounts require HTTPS only using Bicep
 ```
 
 ```

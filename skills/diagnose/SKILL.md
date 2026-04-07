@@ -27,6 +27,7 @@ All ORL `--language` values are listed in `../../references/orl-supported-langua
 | `.hcl` | `hcl` | `hcl-expert` | Terragrunt configs (`terragrunt.hcl`), Packer, Consul, Vault |
 | `.yaml`/`.yml` (CFN) | `cloudformation-yaml` | `cloudformation-expert` | `AWS::S3::Bucket`, `AWS::EC2::Instance` |
 | `.json` (CFN) | `cloudformation-json` | `cloudformation-json-expert` | Same as above, JSON format |
+| `.bicep` | `bicep` | `bicep-expert` | `Microsoft.Storage/storageAccounts`, ARM resource types |
 | `Dockerfile` | `docker` | `docker-expert` | Dockerfile directives (`FROM`, `USER`, `RUN`, `COPY`, `ENV`) |
 | `.yaml`/`.yml` (K8s) | `kubernetes` | `kubernetes-expert` | `Deployment`, `Pod`, `StatefulSet`, `DaemonSet`, `NetworkPolicy` |
 | `.py` | `python` | `python-expert` | AWS CDK, Pulumi, SDK calls, application code |
@@ -47,6 +48,7 @@ Some extensions map to multiple ORL languages. Disambiguate using content inspec
 | `.hcl` | `terraform {` block or `provider` blocks | `terraform` (treat as HCL) |
 | `.hcl` | Terragrunt patterns (`include`, `dependency`, `inputs`) | `hcl` |
 | `.tf` | Always | `terraform` |
+| `.bicep` | Always | `bicep` |
 | `Dockerfile`/`Dockerfile.*` | Always | `docker` |
 | `.py` | Always | `python` |
 
@@ -81,6 +83,7 @@ Extract:
 - **Terraform**: Resource types from `resource "<type>"` blocks
 - **HCL/Terragrunt**: Block types (`remote_state`, `inputs`, `dependency`, `terraform`)
 - **CloudFormation**: Resource types from `Resources:` → `Type:` fields
+- **Bicep**: Resource types from `resource` declarations (e.g., `Microsoft.Storage/storageAccounts@...`)
 - **Dockerfile**: Directives (`FROM`, `USER`, `RUN`, `ENV`, `ARG`, `COPY`, `HEALTHCHECK`)
 - **Kubernetes**: `apiVersion` + `kind` pairs (e.g., `apps/v1 Deployment`, `v1 Pod`)
 - **Python**: Import statements, function calls, class definitions, assignments
@@ -172,7 +175,7 @@ For each finding, report one of:
 
 ### Anti-Pattern Detection Reference
 
-#### Infrastructure as Code (Terraform, CloudFormation, etc.)
+#### Infrastructure as Code (Terraform, CloudFormation, Bicep)
 
 | Policy Domain | What to Check |
 |--------------|--------------|
