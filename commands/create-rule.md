@@ -19,7 +19,7 @@ docker run -v "${PWD}:/workspace" gombocai/orl <command> [args...]
 
 The user provides:
 - A description of the security/compliance policy to enforce
-- The target language: `terraform`, `hcl`, `cloudformation-yaml`, `cloudformation-json`, `bicep`, `docker`, `kubernetes`, or `python`
+- The target language: any ORL language ID from `references/orl-supported-languages.md` (confirm with `docker run gombocai/orl language`)
 - The target resource type or code construct
 
 ## Workflow

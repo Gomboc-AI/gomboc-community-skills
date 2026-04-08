@@ -1,6 +1,6 @@
 ---
 name: apply-fix
-description: Apply a fix to source code using an existing ORL rule or by generating a new one. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python. Optionally saves the fix as a reusable, publishable ORL rule.
+description: Apply a fix to source code using an existing ORL rule or by generating a new one. Supports any ORL CLI language ID (see references/orl-supported-languages.md). Optionally saves the fix as a reusable, publishable ORL rule.
 ---
 
 # Apply Fix
@@ -21,7 +21,7 @@ You receive from the `diagnose` skill (or directly from the user):
 
 - **Finding**: What needs to be fixed (policy violation, file, line, classification reference)
 - **Target file(s)**: The source code file(s) to fix
-- **Language**: The ORL language ID (`terraform`, `hcl`, `cloudformation-yaml`, `cloudformation-json`, `bicep`, `docker`, `kubernetes`, `python`)
+- **Language**: The ORL language ID (see `../../references/orl-supported-languages.md`; confirm with `docker run gombocai/orl language`)
 - **Status**: Whether an existing rule is available or a new rule is needed
 
 ## Path A: Existing Rule Available
@@ -81,9 +81,9 @@ When no existing rule covers the finding, generate one:
 
 ### Step 1: Set Up the Language Expert
 
-Invoke the appropriate `language-*-expert` skill for AST and syntax guidance:
+Invoke the appropriate `language-*-expert` skill for AST and syntax guidance when it exists in the user’s environment. For any ORL language ID, run `docker run gombocai/orl language <id>` for template helpers and grammar hints.
 
-| ORL Language | Expert Skill |
+| ORL Language | Expert Skill (when available) |
 |---|---|
 | `terraform` | `language-terraform-expert` |
 | `hcl` | `language-hcl-expert` |
@@ -93,6 +93,7 @@ Invoke the appropriate `language-*-expert` skill for AST and syntax guidance:
 | `docker` | `language-docker-expert` |
 | `kubernetes` | `language-kubernetes-expert` |
 | `python` | `language-python-expert` |
+| *other* | `language-<id>-expert` if present; else rely on `orl language <id>` and language docs |
 
 ### Step 2: Create Rule Workspace
 
@@ -150,9 +151,10 @@ spec:
 - **CloudFormation YAML**: Use raw tree-sitter YAML queries (`block_mapping_pair`, `flow_node`)
 - **CloudFormation JSON**: Use JSON tree-sitter queries (`pair`, `object`, `array`)
 - **Bicep**: Use raw tree-sitter queries; for missing properties use `replace` with template interpolation on `props_body`
-- **Dockerfile**: Use Dockerfile tree-sitter grammar — `from_instruction`, `user_instruction`, `run_instruction`, `env_instruction`, `arg_instruction`
+- **Dockerfile (`docker`)**: Use Dockerfile tree-sitter grammar — `from_instruction`, `user_instruction`, `run_instruction`, `env_instruction`, `arg_instruction`
 - **Kubernetes**: Use YAML tree-sitter queries scoped by `apiVersion`/`kind` predicates on `block_mapping_pair` nodes
 - **Python**: Use Python tree-sitter grammar — `call`, `import_statement`, `assignment`, `keyword_argument`, `decorated_definition`
+- **Other ORL languages**: Use `docker run gombocai/orl language <id>` and raw tree-sitter queries for that grammar
 
 **Critical rules:**
 - Captures used only for filtering MUST start with `_` (e.g., `@_type`)

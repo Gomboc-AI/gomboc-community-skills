@@ -1,6 +1,6 @@
 ---
 name: diagnose
-description: Classification-driven code analyzer. Detects language, loads matching security policies from the ORL classification corpus, walks the AST, and reports prioritized findings with severity, risk, and compliance framework mappings. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
+description: Classification-driven code analyzer. Detects language, loads matching security policies from the ORL classification corpus, walks the AST, and reports prioritized findings with severity, risk, and compliance framework mappings. Works with any ORL CLI language ID (see references/orl-supported-languages.md).
 ---
 
 # Diagnose — Classification-Driven Code Analyzer
@@ -17,16 +17,22 @@ docker run -v "${PWD}:/workspace" gombocai/orl <command> [args...]
 
 ## Supported Languages
 
+All ORL `--language` values are listed in `../../references/orl-supported-languages.md`. Confirm with `docker run gombocai/orl language`.
+
+### Common file → ORL language hints (IaC-focused)
+
 | File Extension(s) | ORL Language ID | Language Expert | Example Resources |
 |---|---|---|---|
 | `.tf` | `terraform` | `terraform-expert` | `aws_s3_bucket`, `azurerm_storage_account`, `google_compute_instance` |
 | `.hcl` | `hcl` | `hcl-expert` | Terragrunt configs (`terragrunt.hcl`), Packer, Consul, Vault |
 | `.yaml`/`.yml` (CFN) | `cloudformation-yaml` | `cloudformation-expert` | `AWS::S3::Bucket`, `AWS::EC2::Instance` |
 | `.json` (CFN) | `cloudformation-json` | `cloudformation-json-expert` | Same as above, JSON format |
-| `.bicep` | `bicep` | `bicep-expert` | `Microsoft.Storage/storageAccounts` |
+| `.bicep` | `bicep` | `bicep-expert` | `Microsoft.Storage/storageAccounts`, ARM resource types |
 | `Dockerfile` | `docker` | `docker-expert` | Dockerfile directives (`FROM`, `USER`, `RUN`, `COPY`, `ENV`) |
 | `.yaml`/`.yml` (K8s) | `kubernetes` | `kubernetes-expert` | `Deployment`, `Pod`, `StatefulSet`, `DaemonSet`, `NetworkPolicy` |
 | `.py` | `python` | `python-expert` | AWS CDK, Pulumi, SDK calls, application code |
+
+For other extensions (e.g. `.go`, `.ts`, `Dockerfile.*`), map to the matching ORL ID from the reference list and use `orl walk` with that `--language`.
 
 ### Language Disambiguation
 
@@ -36,9 +42,9 @@ Some extensions map to multiple ORL languages. Disambiguate using content inspec
 |-----------|---------------|-------------|
 | `.yaml` | `AWSTemplateFormatVersion` or `Resources:` with AWS type keys | `cloudformation-yaml` |
 | `.yaml` | `apiVersion:` + `kind:` (Kubernetes resource pattern) | `kubernetes` |
-| `.yaml` | Other | Skip — not in scope |
+| `.yaml` | Other generic YAML | `yaml` (if policy corpus applies) or skip |
 | `.json` | `AWSTemplateFormatVersion` | `cloudformation-json` |
-| `.json` | Other | Skip — not in scope |
+| `.json` | Other generic JSON | `json` (if policy corpus applies) or skip |
 | `.hcl` | `terraform {` block or `provider` blocks | `terraform` (treat as HCL) |
 | `.hcl` | Terragrunt patterns (`include`, `dependency`, `inputs`) | `hcl` |
 | `.tf` | Always | `terraform` |
@@ -51,9 +57,9 @@ Some extensions map to multiple ORL languages. Disambiguate using content inspec
 ### Step 1: Detect Language & Scope
 
 1. Read the target files or list files in the target directory
-2. Group files by detected ORL language using the table above
-3. Skip files whose language is not in scope
-4. For each detected language, note which `language-*-expert` skill applies
+2. Group files by detected ORL language using the hints table and `../../references/orl-supported-languages.md`
+3. Skip files you cannot map to an ORL language ID, or that have no matching classifications in the corpus
+4. For each detected language, note which `language-*-expert` skill applies when available
 
 ### Step 2: Load Matching Classifications
 
@@ -81,6 +87,7 @@ Extract:
 - **Dockerfile**: Directives (`FROM`, `USER`, `RUN`, `ENV`, `ARG`, `COPY`, `HEALTHCHECK`)
 - **Kubernetes**: `apiVersion` + `kind` pairs (e.g., `apps/v1 Deployment`, `v1 Pod`)
 - **Python**: Import statements, function calls, class definitions, assignments
+- **Other ORL languages**: Infer structural anchors from `orl walk` output and the classification’s `description` / `gomboc-ai/resources`
 
 ### Step 4: Match Policies to Code
 

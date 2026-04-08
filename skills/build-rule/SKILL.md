@@ -1,6 +1,6 @@
 ---
 name: build-rule
-description: Build an ORL rule by creating workspace files, writing the rule using tree-sitter AST queries, and testing it. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python with embedded language expertise.
+description: Build an ORL rule by creating workspace files, writing the rule using tree-sitter AST queries, and testing it. Supports any ORL CLI language ID (see references/orl-supported-languages.md).
 ---
 
 # Build an ORL Rule
@@ -68,7 +68,7 @@ metadata:
     - gomboc-ai/policy/...
 spec:
   template:
-    language: terraform  # or cloudformation-yaml, bicep
+    language: terraform  # or cloudformation-yaml, bicep, or any ORL ID from ../../references/orl-supported-languages.md
     audit_language: ast
   rules:
     - name: descriptive-rule-name
@@ -122,6 +122,7 @@ If tests fail, compare actual vs expected output and adjust the rule or expected
 docker run gombocai/orl language terraform
 docker run gombocai/orl language cloudformation-yaml
 docker run gombocai/orl language bicep
+docker run gombocai/orl language   # lists all supported language IDs for your image
 ```
 
 ## Critical Best Practices

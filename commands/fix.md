@@ -24,7 +24,7 @@ The user provides one or more of:
 
 ## Supported Languages
 
-Terraform (`.tf`), HCL/Terragrunt (`.hcl`), CloudFormation YAML (`.yaml`/`.yml`), CloudFormation JSON (`.json`), Bicep (`.bicep`), Dockerfile (`Dockerfile`), Kubernetes (`.yaml`/`.yml`), and Python (`.py`).
+Use the ORL `--language` ID that matches the code under review. The full list for this plugin’s baseline is in `references/orl-supported-languages.md`; run `docker run gombocai/orl language` to match your image.
 
 ## Workflow
 

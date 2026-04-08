@@ -1,6 +1,6 @@
 ---
 name: plan-rule
-description: Plan an ORL rule by analyzing requirements, researching the target resource, identifying test cases, and creating before/after code samples. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
+description: Plan an ORL rule by analyzing requirements, researching the target resource, identifying test cases, and creating before/after code samples. Supports any ORL CLI language ID (see references/orl-supported-languages.md).
 ---
 
 # Plan an ORL Rule
@@ -9,23 +9,18 @@ You are a planning expert for ORL (Open Remediation Language) rules. Your job is
 
 ## Supported Languages
 
-| Language | Provider / Context | ORL Language ID |
-|----------|-------------------|-----------------|
-| Terraform (HCL) | AWS, Azure, GCP | `terraform` |
-| HCL (Terragrunt, Packer, etc.) | AWS, Azure, GCP | `hcl` |
-| CloudFormation YAML | AWS | `cloudformation-yaml` |
-| CloudFormation JSON | AWS | `cloudformation-json` |
-| Bicep | Azure | `bicep` |
-| Dockerfile | Docker / container | `docker` |
-| Kubernetes YAML | Kubernetes | `kubernetes` |
-| Python | AWS CDK, Pulumi, application code | `python` |
+ORL language IDs are whatever your `gombocai/orl` image accepts. The baseline list shipped with this plugin is in `../../references/orl-supported-languages.md`. Confirm at any time with:
+
+```bash
+docker run gombocai/orl language
+```
 
 ## Workflow
 
 ### Step 1: Understand the Goal
 
 Identify from the user's request:
-- **Target language**: terraform, cloudformation-yaml, or bicep
+- **Target language**: the ORL `--language` ID for the code under review (see `../../references/orl-supported-languages.md`)
 - **Cloud provider**: AWS, Azure, or GCP
 - **Target resource**: The specific resource type (e.g., `aws_s3_bucket`, `Microsoft.Storage/storageAccounts`, `AWS::S3::Bucket`)
 - **Objective**: What property or configuration should be enforced
@@ -37,7 +32,7 @@ Search for official documentation on the target resource. Use these search strat
 - **Terraform**: `site:registry.terraform.io/providers/ <resource_type>`
 - **HCL/Terragrunt**: `site:terragrunt.gruntwork.io/ <block_type>` or relevant HashiCorp docs
 - **CloudFormation**: `site:docs.aws.amazon.com/AWSCloudFormation/ <resource_type>`
-- **Bicep/ARM**: `site:learn.microsoft.com/en-us/azure/templates/ <resource_type>`
+- **Bicep / Azure ARM**: `site:learn.microsoft.com/en-us/azure/templates/ <resource_type>` and Bicep language docs for syntax
 - **Dockerfile**: `site:docs.docker.com/reference/dockerfile/ <directive>`
 - **Kubernetes**: `site:kubernetes.io/docs/reference/ <resource_kind>`
 - **Python**: Official SDK docs for the target library (boto3, aws-cdk-lib, pulumi, requests, etc.)
