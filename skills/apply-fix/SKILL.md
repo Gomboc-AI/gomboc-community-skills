@@ -53,11 +53,11 @@ If the rule is in the Gomboc Rules Service, pull it first. Use the `--search` fl
 1. **Pull the rule**:
    ```bash
    # Best: match by classification + language
-   docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
+   docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
      --search '(and (any "<classification-name>" $.classification) (eq $.metadata.language "<lang>"))'
 
    # Or by resource type + language
-   docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
+   docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
      --search '(and (any "<resource-type>" $.classification) (eq $.metadata.language "<lang>"))'
    ```
 

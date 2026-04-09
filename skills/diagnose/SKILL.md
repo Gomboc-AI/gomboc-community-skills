@@ -118,23 +118,23 @@ Match by comparing the classification's `gomboc-ai/resources` list against each 
 
 #### Strategy 2: Remote search by classification + resource + language
 
-If `RULE_SERVICE_TOKEN` is set, query the Gomboc Rules Service. Build **compound queries** using the classification data already extracted from the finding — not just keyword name matching:
+If the `RULE_SERVICE_TOKEN` environment variable is set, query the Gomboc Rules Service. Build **compound queries** using the classification data already extracted from the finding — not just keyword name matching:
 
 ```bash
 # Best: search by classification name (exact policy match)
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
   --search '(any "gomboc-ai/policy/encryption/encryption_at_rest" $.classification)'
 
 # Narrow by language
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
   --search '(and (any "gomboc-ai/policy/encryption/encryption_at_rest" $.classification) (eq $.metadata.language "terraform"))'
 
 # Search by resource type
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
   --search '(any "aws_s3_bucket" $.classification)'
 
 # Combine classification + resource + language for precision
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
   --search '(and (any "aws_s3_bucket" $.classification) (eq $.metadata.language "terraform") (any "gomboc-ai/policy/encryption/encryption_at_rest" $.classification))'
 ```
 
@@ -143,7 +143,7 @@ docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull 
 If strategies 1 and 2 return no results, try a broader name/pattern search:
 
 ```bash
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
   --search '(matches "/encryption.*s3/" $.name)'
 ```
 
