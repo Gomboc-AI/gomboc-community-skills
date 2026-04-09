@@ -1,0 +1,229 @@
+# yaml-language-server: $schema=../../../schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  name: "enterprise_name/sentinel/most_recent_ami_version"
+  display_name: "Most Recent AMI Version is required."
+  annotations:
+    contributed-by: Gomboc-AI
+    provider: AWS
+    resources: |-
+      aws_ami
+    operational/risk: low
+    operational/risk/statement: |-
+      This is an audit-rule that checks for the most recent AMI version.  It therefore has no operational risk.
+  description: |-
+    All aws_instance should have an ami that is a data element to an aws_ami data source.  And the aws_ami data source should have most_recent set to true, have a valid owner, and use a known good name pattern.
+  priority: 1
+
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+
+  rules:
+    - name: "See if aws_instance ami is missing"
+      audit: |
+        {{ aResource("aws_instance", aMissingAttribute("ami")) }}
+
+      remediation:
+        - command: audit
+          value: |
+            EC2 instance AMI violation: {{ $.name }} EC2 instance is missing aws_ami. The AMI field must reference a datasource in the format: data.aws_ami.<name>.id
+
+    - name: "See if aws_instance ami is not using data"
+      audit: |
+        {{ aResource("aws_instance", anAttribute("ami")) }}
+
+      # skip if the ami is using a data source
+      skip_finding: |
+        $.value | hasPrefix("data.aws_ami.")
+
+      remediation:
+        - command: audit
+          value: |
+            EC2 instance AMI violation: {{ $.name }} EC2 instance does not reference an aws_ami datasource. The AMI field must reference a datasource in the format: data.aws_ami.<name>.id
+
+    ## NOTE: We currently don't have helpers for data items. so use raw s-expressions for these rules.
+
+    - name: "See if data.aws_ami is missing most_recent"
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            ;; Check that everything in the body to make sure the attribute is not found
+            [
+              (attribute
+                (identifier)* @key
+              ) @attribute
+              (block)
+              (comment)
+            ]*
+            (#not-eq? @key "most_recent")
+          ) @body
+        ) @resource
+
+      remediation:
+        - command: audit
+          value: |
+            AMI most_recent violation: {{ $.name }} aws_ami datasource is missing most_recent. The most_recent field must be set to true to ensure the latest AMI version is used.
+
+    - name: "See if data.aws_ami has most_recent set to false"
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            (attribute
+              (identifier) @key
+              (#eq? @key "most_recent")
+
+              (expression) @value
+              (#not-eq? @value "true")
+            ) @attribute
+          ) @body
+        ) @resource
+
+      remediation:
+        - command: audit
+          value: |
+            AMI most_recent violation: {{ $.name }} aws_ami datasource has most_recent set to false. The most_recent field must be set to true to ensure the latest AMI version is used.
+
+    - name: "See if data.aws_ami has a missing name filter"
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            ;; Check that everything in the body to make sure the block is not found
+            [
+              (attribute)
+              (block
+                (identifier)* @block_key
+              )
+              (comment)
+            ]*
+            (#not-eq? @block_key "filter")
+          ) @body
+        ) @resource
+
+      remediation:
+        - command: audit
+          value: |
+            AMI name filter violation: {{ $.name }} aws_ami datasource is missing a name filter. The name filter must be set to ensure the latest AMI version is used.
+
+    - name: "See if data.aws_ami has an invalid name pattern"
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            (block
+              (identifier)* @block_key
+              (#eq? @block_key "filter")
+
+              (body
+                (attribute
+                  (identifier) @name_key
+                  (#eq? @name_key "name")
+
+                  (expression
+                    (literal_value
+                      (string_lit
+                        (template_literal) @name_value
+                        (#eq? @name_value "name")
+                      )
+                    )
+                  )
+                )
+
+                (attribute
+                  (identifier) @values_key
+                  (#eq? @values_key "values")
+
+                  (expression) @values
+                )
+              )
+            )
+          ) @body
+        ) @resource
+
+      # skip findings if the version is invalid or value is valid
+      skip_finding: |
+        let value = $.values | trim("\"[]");
+        !(value in ["ubuntu-bionic-1804-base-*", "ami-0480b2839381fe680"])
+
+      remediation:
+        - command: audit
+          value: |
+            AMI name pattern violation: {{ $.name }} aws_ami datasource has an invalid name pattern ({{ $.values | trim("\"[]") }}). The name pattern must be a valid Ubuntu AMI name pattern.
+
+    ## An extra test
+    - name: "See if data.aws_ami has an invalid owner"
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            ;; Check that everything in the body to make sure the attribute is not found
+            [
+              (attribute
+                (identifier)* @key
+              ) @attribute
+              (block)
+              (comment)
+            ]*
+            (#not-eq? @key "owners")
+          ) @body
+        ) @resource
+
+      # skip if the ami is us
+      skip_finding: |
+        474230206603 in $.owners
+
+      remediation:
+        - command: audit
+          value: |
+            AMI owner violation: {{ $.name }} aws_ami datasource has an invalid owner ({{ $.owners }}). The owner must be 474230206603.

@@ -1,0 +1,9 @@
+type: Variables
+version: v1
+metadata:
+  name: enterprise_name
+  description: A set of variables to control the behavior of custom rules
+data:
+  # The version of Ubuntu to use.
+  # Valid values are "16.04" or "18.04"
+  ubuntu_version: "invalid"

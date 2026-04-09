@@ -8,7 +8,7 @@
       "name": "gomboc-community",
       "source": "./",
       "description": "Scan, fix, and create ORL rules for Terraform, HCL, CloudFormation, Bicep, Dockerfile, Kubernetes, and Python",
-      "version": "2.0.0"
+      "version": "2.1.0"
     }
   ]
 }

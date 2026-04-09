@@ -71,7 +71,7 @@ Ask the user: "Would you like to push this rule to the Gomboc Rules Service?"
 If yes, invoke the `push-rule` skill:
 1. Verify `RULE_SERVICE_TOKEN` is set in the user's environment
 2. Run tests one final time: `docker run -v "${PWD}:/workspace" gombocai/orl test .`
-3. Push: `docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules push .`
+3. Push: `docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules push .`
 4. Report success or failure
 
 If no, inform the user the rule is complete and ready for local use or manual publishing.

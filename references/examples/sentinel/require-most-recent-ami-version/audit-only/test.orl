@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../../schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: Test
+  priority: 1
+
+spec:
+  rulespace: .
+
+  cases:
+    - name: Audits the workspace
+      language: terraform
+      workspace:
+        path: ../workspace
+      expected_report:
+        findings: 9
+        fixes: 0
+        error_count: 9

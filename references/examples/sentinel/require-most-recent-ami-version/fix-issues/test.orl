@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=../../schema/test.json
+---
+type: Test
+version: v1
+metadata:
+  name: Test
+  priority: 1
+
+spec:
+  rulespace: .
+
+  cases:
+    - name: Works when no version is specified
+      language: terraform
+      log_level: WARN # For example purposes show some logging
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./expected_workspace_with_defaults
+
+    - name: Works when version is 16.04
+      language: terraform
+      log_level: ERROR
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./expected_workspace_for_16_04
+      contexts:
+        - path: ./vars/ubuntu_16_04/version.orl
+          type: variables
+
+    - name: Works when version is 18.04
+      language: terraform
+      log_level: ERROR
+      workspace:
+        path: ./workspace
+      remediated_workspace:
+        path: ./expected_workspace_with_defaults
+      contexts:
+        - path: ./vars/ubuntu_18_04/version.orl
+          type: variables
+
+    - name: Errors correct when version is invalid
+      language: terraform
+      log_level: ERROR
+      workspace:
+        path: ./workspace
+      contexts:
+        - path: ./vars/invalid/version.orl
+          type: variables
+      expected_report:
+        logs:
+          - level: ERROR
+            message: "Invalid value for variable 'enterprise_name.ubuntu_version': 'invalid'"

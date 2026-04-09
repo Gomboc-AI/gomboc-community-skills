@@ -1,0 +1,105 @@
+# yaml-language-server: $schema=../../schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  name: "enterprise_name/data/aws_ami/owners/is-valid"
+  display_name: "AWS AMI data source has a valid owner"
+  annotations:
+    contributed-by: Gomboc-AI
+    provider: AWS
+    resources: |-
+      data.aws_ami
+    operational/risk: high
+    operational/risk/statement: |-
+      If the AMI ID associated with an aws_instance is changed, Terraform will detect this as a change in the instance's configuration.
+      Upon the next `terraform apply`, it will destroy the current EC2 instance and create a new one with the new AMI ID.
+      This can lead to downtime and replacement of the instance, including a new instance ID and loss of ephemeral data unless data volumes are preserved.
+      This is because the AMI parameter is immutable for existing instances; thus, an in-place update is not possible for the AMI attribute.
+  description: |-
+    The aws_ami data source should have a valid owner.
+  priority: 2
+
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+
+  rules:
+
+    - name: "Update aws_ami if owner is missing"
+      # We currently don't have helpers for data items. so use raw s-expressions
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            ;; Check that everything in the body to make sure the attribute is not found
+            [
+              (attribute
+                (identifier)* @key
+              ) @attribute
+              (block)
+              (comment)
+            ]*
+            (#not-eq? @key "owners")
+          ) @body
+        ) @resource
+
+      remediation:
+        - command: audit
+          flags:
+            level: WARN
+          value: |
+            Finding: {{ $ }}
+
+        - command: "insert_after"
+          path: "body"
+          flags:
+            prefix: "\n\n"
+            indent: "  "
+          value: |
+            owners = ["474230206603"]
+
+    - name: "Update aws_ami if owner is not valid"
+      # We currently don't have helpers for data items. so use raw s-expressions
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            (attribute
+              (identifier) @key
+              (#eq? @key "owners")
+
+              (expression) @value
+            ) @attribute
+          ) @body
+        ) @resource
+
+      remediation:
+        - command: audit
+          flags:
+            level: WARN
+          value: |
+            Finding: {{ $ }}
+
+        - command: "replace"
+          path: "value"
+          value: "[\"474230206603\"]"

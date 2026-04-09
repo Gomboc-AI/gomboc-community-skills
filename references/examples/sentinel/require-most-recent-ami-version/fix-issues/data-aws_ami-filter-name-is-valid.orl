@@ -1,0 +1,179 @@
+# yaml-language-server: $schema=../../schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  name: "enterprise_name/data/aws_ami/filter/name/is-valid"
+  display_name: "AWS AMI data source has a valid name filter"
+  annotations:
+    contributed-by: Gomboc-AI
+    provider: AWS
+    resources: |-
+      data.aws_ami
+    operational/risk: high
+    operational/risk/statement: |-
+      If the AMI ID associated with an aws_instance is changed, Terraform will detect this as a change in the instance's configuration.
+      Upon the next `terraform apply`, it will destroy the current EC2 instance and create a new one with the new AMI ID.
+      This can lead to downtime and replacement of the instance, including a new instance ID and loss of ephemeral data unless data volumes are preserved.
+      This is because the AMI parameter is immutable for existing instances; thus, an in-place update is not possible for the AMI attribute.
+  description: |-
+    The aws_ami data source should have a valid name filter.
+  priority: 4
+
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+
+  rules:
+    - name: "Update aws_ami if name filter is missing"
+      # We currently don't have helpers for data items. so use raw s-expressions
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            ;; Check that everything in the body to make sure the block is not found
+            [
+              (attribute)
+              (block
+                (identifier)* @block_key
+              )
+              (comment)
+            ]*
+            (#not-eq? @block_key "filter")
+          ) @body
+        ) @resource
+
+      remediation:
+        # I can be useful to audit the logic when things get more complex
+        - command: audit
+          flags:
+            level: WARN
+          value: |
+            Filter block is missing
+            Vars: {{ vars }}
+            Name: {{ $.name }}
+            Is not default: {{
+              let ubuntu_version = vars.enterprise_name?.ubuntu_version;
+              ubuntu_version != nil && ubuntu_version != "18.04"
+            }}
+            Is not 16.04: {{ vars.enterprise_name?.ubuntu_version != "16.04"}}
+            Is not invalid: {{
+              let ubuntu_version = vars.enterprise_name?.ubuntu_version;
+              ubuntu_version == "18.04" || ubuntu_version == "16.04"
+            }}
+            Finding: {{ $ }}
+
+        - command: audit
+          flags:
+            level: ERROR
+          skip: |
+            let ubuntu_version = vars.enterprise_name?.ubuntu_version;
+            ubuntu_version in ["18.04", "16.04"]
+          value: |-
+            Invalid value for variable 'enterprise_name.ubuntu_version': '{{ vars.enterprise_name?.ubuntu_version }}'
+
+        - command: "insert_after"
+          path: "body"
+          flags:
+            prefix: "\n\n"
+            indent: "  "
+          # this is the default value
+          skip: |
+            let ubuntu_version = vars.enterprise_name?.ubuntu_version;
+            !(ubuntu_version in [nil, "18.04"])
+          value: |
+            filter {
+              name   = "name"
+              values = ["ubuntu-bionic-1804-base-*"]
+            }
+
+        - command: "insert_after"
+          path: "body"
+          flags:
+            prefix: "\n\n"
+            indent: "  "
+          # this is if 16.04 is specified
+          skip: |
+            vars.enterprise_name?.ubuntu_version != "16.04"
+          value: |
+            filter {
+              name   = "name"
+              values = ["ami-0480b2839381fe680"]
+            }
+
+    - name: "Update aws_ami if name filter is not valid"
+      # We currently don't have helpers for data items. so use raw s-expressions
+      audit: |
+        (block
+          (identifier) @keyword
+          (#eq? @keyword "data")
+
+          (string_lit
+            (template_literal) @type
+            (#eq? @type "aws_ami")
+          )
+          (string_lit
+            (template_literal) @name
+          )
+          (body
+            (block
+              (identifier)* @block_key
+              (#eq? @block_key "filter")
+
+              (body
+                (attribute
+                  (identifier) @name_key
+                  (#eq? @name_key "name")
+
+                  (expression
+                    (literal_value
+                      (string_lit
+                        (template_literal) @name_value
+                        (#eq? @name_value "name")
+                      )
+                    )
+                  )
+                )
+
+                (attribute
+                  (identifier) @values_key
+                  (#eq? @values_key "values")
+
+                  (expression) @values
+                )
+              )
+            )
+          ) @body
+        ) @resource
+
+      # skip findings if the version is invalid or value is valid
+      skip_finding: |
+        let ubuntu_version = vars.enterprise_name?.ubuntu_version;
+        let value = $.values | trim("\"[]");
+        !(ubuntu_version in [nil, "18.04", "16.04"]) || (value in ["ubuntu-bionic-1804-base-*", "ami-0480b2839381fe680"])
+
+      remediation:
+        - command: audit
+          flags:
+            level: WARN
+          value: |
+            Value: {{ $.values }}
+            Trimmed value: {{ $.values | trim("\"[]") }}
+            Version: {{ vars.enterprise_name?.ubuntu_version }}
+            Valid versions: {{ vars.enterprise_name?.ubuntu_version in [nil, "18.04", "16.04"] }}
+            Valid values: {{ $.values | trim("\"[]") in ["ubuntu-bionic-1804-base-*", "ami-0480b2839381fe680"] }}
+
+        - command: "replace"
+          path: "values"
+          value: |-
+            ["{{ {"": "ubuntu-bionic-1804-base-*", "18.04": "ubuntu-bionic-1804-base-*", "16.04": "ami-0480b2839381fe680"}[vars.enterprise_name?.ubuntu_version ?? ""] }}"]

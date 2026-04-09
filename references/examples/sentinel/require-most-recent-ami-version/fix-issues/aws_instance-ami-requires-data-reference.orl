@@ -1,0 +1,96 @@
+# yaml-language-server: $schema=../../schema/ruleset.json
+---
+type: Ruleset
+version: v1
+metadata:
+  name: "enterprise_name/aws_instance/ami/requires-data-reference"
+  display_name: "AWS Instance AMI Requires Data Reference"
+  annotations:
+    contributed-by: Gomboc-AI
+    provider: AWS
+    resources: |-
+      aws_ami
+    operational/risk: high
+    operational/risk/statement: |-
+      If the AMI ID associated with an aws_instance is changed, Terraform will detect this as a change in the instance's configuration.
+      Upon the next `terraform apply`, it will destroy the current EC2 instance and create a new one with the new AMI ID.
+      This can lead to downtime and replacement of the instance, including a new instance ID and loss of ephemeral data unless data volumes are preserved.
+      This is because the AMI parameter is immutable for existing instances; thus, an in-place update is not possible for the AMI attribute.
+  description: |-
+    All aws_instance should have an ami that is a data element to an aws_ami data source.
+  priority: 1
+
+spec:
+  template:
+    language: terraform
+    audit_language: ast
+
+  rules:
+    - name: "Update aws_instance if missing ami"
+      audit: |
+        {{ aResource("aws_instance", aMissingAttribute("ami")) }}
+
+      remediation:
+        # use "-v" to see the finding
+        - command: audit
+          flags:
+            level: WARN
+          value: |
+            Finding: {{ $ }}
+
+        - command: "insert_after"
+          path: "body"
+          flags:
+            prefix: "\n\n"
+            indent: "  "
+          value: |
+            ami = data.aws_ami.{{$.name}}.id
+
+        - command: "insert_before"
+          path: "resource"
+          flags:
+            suffix: "\n"
+          value: |
+            data "aws_ami" "{{ $.name }}" {
+              most_recent = true
+              owners      = ["474230206603"]
+
+              filter {
+                name   = "name"
+                values = ["ubuntu-bionic-1804-base-*"]
+              }
+            }
+
+    - name: "Update aws_instance if ami is not using data"
+      audit: |
+        {{ aResource("aws_instance", anAttribute("ami")) }}
+
+      # skip if the ami is using a data source
+      skip_finding: |
+        $.value | hasPrefix("data.aws_ami.")
+
+      remediation:
+        - command: audit
+          flags:
+            level: WARN
+          value: |
+            Finding: {{ $ }}
+
+        - command: "replace"
+          path: "value"
+          value: "data.aws_ami.{{ $.name }}.id"
+
+        - command: "insert_before"
+          path: "resource"
+          flags:
+            suffix: "\n"
+          value: |
+            data "aws_ami" "{{ $.name }}" {
+              most_recent = true
+              owners      = ["474230206603"]
+
+              filter {
+                name   = "name"
+                values = [{{ $.value }}]
+              }
+            }
