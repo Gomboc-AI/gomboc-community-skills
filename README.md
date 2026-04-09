@@ -37,7 +37,7 @@ docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules push 
 
 ```bash
 claude plugin marketplace add Gomboc-AI/gomboc-community-skills
-claude plugin install gomboc-orl-community@gomboc-community-marketplace
+claude plugin install gomboc-community@gomboc-community-marketplace
 ```
 
 ### From local path
