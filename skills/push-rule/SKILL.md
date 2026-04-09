@@ -51,7 +51,7 @@ All tests MUST pass before pushing. If tests fail, report the failures and stop.
 Pass the `RULE_SERVICE_TOKEN` environment variable to the Docker container using `-e`:
 
 ```bash
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules push .
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules push .
 ```
 
 The `-e RULE_SERVICE_TOKEN` flag forwards the host environment variable into the container. The user must have it set in their shell:
@@ -75,11 +75,11 @@ On failure, report the error message from the ORL CLI.
 After pushing, rules can be pulled with:
 
 ```bash
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull --query '(contains $.name "rule-name")'
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull --query '(contains $.name "rule-name")'
 ```
 
 Or pull all rules for a specific language:
 
 ```bash
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull --query '(eq finding.iacLanguage "terraform")'
+docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull --query '(eq finding.iacLanguage "terraform")'
 ```

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=/app/orl-rules/schema/test.json
+# yaml-language-server: $schema=../../../schema/test.json
 ---
 type: Test
 version: v1
