@@ -1,0 +1,118 @@
+# This policy enforces three requirements for EC2 instances:
+# 1. AMI field must reference an aws_ami datasource (data.aws_ami.<name>.id)
+# 2. All aws_ami datasources must have most_recent = true
+# 3. AMI datasource must constrain name via either name_regex or name filter:
+
+# Import common-functions/tfstate-functions/tfstate-functions.sentinel
+# with alias "state"
+import "tfstate-functions" as state
+
+# Import common-functions/tfconfig-functions/tfconfig-functions.sentinel
+# with alias "config"
+import "tfconfig-functions" as config
+import "types"
+
+# List of allowed AMI name patterns (regexes) (set via policy set parameter)
+param allowed_name_regex default [""]
+
+# Get all EC2 instances
+allEC2Instances = config.find_resources_by_type("aws_instance")
+
+# Filter to EC2 instances with violations
+# Set last parameter to false to suppress automatic printing - we'll print our own messages
+# Note that we test "config.ami" and expect a reference like "data.aws_ami.ubuntu"
+# While the actual reference might be "data.aws_ami.ubuntu.id", Terraform only
+# gives Sentinel references to resources and data sources, not to their attributes.
+violatingEC2Instances = config.filter_attribute_does_not_match_regex(allEC2Instances,
+	"config.ami", "^data\\.aws_ami\\.(.*)$", false)
+
+# Count EC2 instance violations
+EC2InstanceViolations = length(violatingEC2Instances["messages"])
+
+# Get all aws_ami data sources
+allAMIs = state.find_datasources("aws_ami")
+
+# Filter to AMIs with violations for most_recent
+# Set last parameter to false to suppress automatic printing - we'll print our own messages
+violatingAMIs = state.filter_attribute_is_not_value(allAMIs, "most_recent", true, false)
+
+# Evaluate AMI name constraints: allow either name_regex in allowed list OR
+# a filter { name = "name"; values = [ ... ] } where any value matches one of allowed regexes
+violatingAMINameConstraints = {}
+violatingAMINameConstraintMessages = {}
+
+for allAMIs as address, ami {
+	# Case 1: name_regex present and allowed
+	nameRegex = state.evaluate_attribute(ami, "name_regex") else null
+	nameRegexAllowed = false
+	if nameRegex is not null {
+		if nameRegex in allowed_name_regex {
+			nameRegexAllowed = true
+		}
+	}
+
+	# Case 2: filter blocks with name = "name" and values containing a value that matches any allowed regex
+	filterAllowed = false
+	filters = state.find_blocks(ami, "filter")
+	for filters as idx, f {
+		# Blocks from find_blocks are maps, access attributes directly
+		fName = f["name"] else null
+		if fName is "name" {
+			vals = f["values"] else []
+			if types.type_of(vals) is "list" {
+				for vals as vi, v {
+					if types.type_of(v) is "string" {
+						for allowed_name_regex as ri, re {
+							if v matches re {
+								filterAllowed = true
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if not (nameRegexAllowed or filterAllowed) {
+		violatingAMINameConstraints[address] = ami
+		addr_str = string(address) else "unknown"
+		msg = addr_str + " must set either name_regex in allowed list or a filter{name=\"name\"} with values matching allowed regexes. Please see the Confluence page for the list of allowed patterns."
+		violatingAMINameConstraintMessages[address] = msg
+		print(msg)
+	}
+}
+
+# Count AMI violations
+AMIViolations = length(violatingAMIs["messages"])
+
+# Count AMI name constraint violations
+AMINameConstraintViolations = length(violatingAMINameConstraintMessages)
+
+# Add both kinds of violations
+violations = EC2InstanceViolations + AMIViolations + AMINameConstraintViolations
+
+# Print specific error messages for each violation type
+if EC2InstanceViolations > 0 {
+	msg = "EC2 instance AMI violation: " + string(EC2InstanceViolations) + " EC2 instance(s) do not reference an aws_ami datasource. The AMI field must reference a datasource in the format: data.aws_ami.<name>.id"
+	print(msg)
+}
+
+if AMIViolations > 0 {
+	msg = "AMI most_recent violation: " + string(AMIViolations) + " aws_ami datasource(s) do not have most_recent = true. All aws_ami datasources must set most_recent = true to ensure the latest AMI version is used."
+	print(msg)
+}
+
+if AMINameConstraintViolations > 0 {
+	msg = "AMI name constraint violation: " + string(AMINameConstraintViolations) + " aws_ami datasource(s) do not have valid name constraints. AMI datasources must set either name_regex in the allowed list or a filter{name=\"name\"} with values matching allowed regexes. Please see the Confluence page for the list of allowed patterns."
+	print(msg)
+}
+
+if violations > 0 {
+	print("For more information, see the wiki")
+	print("Or contact us in Slack")
+}
+
+# Main rule
+main = rule {
+	violations is 0
+}

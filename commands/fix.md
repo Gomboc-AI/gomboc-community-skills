@@ -33,7 +33,7 @@ Terraform (`.tf`), HCL/Terragrunt (`.hcl`), CloudFormation YAML (`.yaml`/`.yml`)
 Invoke the `diagnose` skill with the user's target path and any filters.
 
 1. Detect file languages from extensions and content
-2. Load matching classifications from `/orl-rules/final/classifications/policies/`
+2. Load matching classifications from `references/examples/classifications.txt` or from searching orl classifications / policies
 3. Walk the AST of each file to identify resources and structures
 4. Match policies to code — check for anti-patterns per the classification descriptions
 5. Check if existing published rules cover each finding

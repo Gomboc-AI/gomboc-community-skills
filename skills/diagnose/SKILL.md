@@ -57,7 +57,7 @@ Some extensions map to multiple ORL languages. Disambiguate using content inspec
 
 ### Step 2: Load Matching Classifications
 
-1. Read all YAML files under `/orl-rules/final/classifications/policies/` (recursively)
+1. Read all YAML files under `references/examples/classifications.txt` (recursively)
 2. For each classification YAML, parse the `gomboc-ai/iac` annotation to get its list of supported languages
 3. Filter to classifications where `gomboc-ai/iac` includes at least one of the detected languages
 4. If the user specified a concern keyword (e.g., "encryption", "public access"), further filter by matching against `name`, `description`, and `gomboc-ai/categories`
@@ -118,23 +118,23 @@ Match by comparing the classification's `gomboc-ai/resources` list against each 
 
 #### Strategy 2: Remote search by classification + resource + language
 
-If the `RULE_SERVICE_TOKEN` environment variable is set, query the Gomboc Rules Service. Build **compound queries** using the classification data already extracted from the finding — not just keyword name matching:
+If `RULE_SERVICE_TOKEN` is set, query the Gomboc Rules Service. Build **compound queries** using the classification data already extracted from the finding — not just keyword name matching:
 
 ```bash
 # Best: search by classification name (exact policy match)
-docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
   --search '(any "gomboc-ai/policy/encryption/encryption_at_rest" $.classification)'
 
 # Narrow by language
-docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
   --search '(and (any "gomboc-ai/policy/encryption/encryption_at_rest" $.classification) (eq $.metadata.language "terraform"))'
 
 # Search by resource type
-docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
   --search '(any "aws_s3_bucket" $.classification)'
 
 # Combine classification + resource + language for precision
-docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
   --search '(and (any "aws_s3_bucket" $.classification) (eq $.metadata.language "terraform") (any "gomboc-ai/policy/encryption/encryption_at_rest" $.classification))'
 ```
 
@@ -143,7 +143,7 @@ docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules 
 If strategies 1 and 2 return no results, try a broader name/pattern search:
 
 ```bash
-docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules pull \
+docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules pull \
   --search '(matches "/encryption.*s3/" $.name)'
 ```
 
