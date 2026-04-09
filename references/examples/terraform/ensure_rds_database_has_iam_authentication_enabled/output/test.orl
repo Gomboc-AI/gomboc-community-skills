@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../../../schema/test.json
 type: Test
 version: v1
 metadata:

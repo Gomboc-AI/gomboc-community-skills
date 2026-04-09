@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
+# yaml-language-server: $schema=../../../schema/ruleset.json
 ---
 metadata:
     annotations:

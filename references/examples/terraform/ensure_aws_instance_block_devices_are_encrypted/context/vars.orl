@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=/app/orl-rules/schema/variable.json
+# yaml-language-server: $schema=../../../../schema/variable.json
 ---
 type: Variables
 version: v1
