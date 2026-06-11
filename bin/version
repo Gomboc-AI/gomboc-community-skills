@@ -1,0 +1,329 @@
+#!/usr/bin/env bash
+#
+# bin/version — get, bump, or set the version across all plugin and marketplace
+# configurations in gomboc-community-skills.
+#
+# Usage:
+#   bin/version get
+#   bin/version bump [major|minor|patch]    # default: patch
+#   bin/version set <X.Y.Z>
+#
+# Flags:
+#   --no-commit    Edit files but don't auto-commit the change
+#   --help, -h     Show this message
+#
+# bump and set auto-commit with message "chore: bump version to X.Y.Z" unless
+# --no-commit is passed. They refuse to run when the working tree has changes
+# outside the tracked version files (keeps the version-bump commit clean).
+#
+# Tracked locations: see the FILES / READS / WRITES arrays below. New plugins
+# must be added here explicitly.
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
+
+# ── Tracked version locations ────────────────────────────────────────────────
+# Three parallel arrays. Each index i defines one tracked location:
+#   FILES[i]   = path relative to repo root
+#   READS[i]   = jq expression yielding the current version string
+#   WRITES[i]  = jq expression that, with --arg v <NEW>, returns the modified document
+
+FILES=(
+  ".claude-plugin/marketplace.json"
+  ".claude-plugin/plugin.json"
+  ".cursor-plugin/marketplace.json"
+  ".cursor-plugin/plugin.json"
+  ".codex-plugin/plugin.json"
+  "gemini-extension.json"
+)
+
+READS=(
+  '.plugins[] | select(.name=="gomboc-community") | .version'
+  '.version'
+  '.plugins[] | select(.name=="gomboc-community") | .version'
+  '.version'
+  '.version'
+  '.version'
+)
+
+WRITES=(
+  '(.plugins[] | select(.name=="gomboc-community") | .version) |= $v'
+  '.version = $v'
+  '(.plugins[] | select(.name=="gomboc-community") | .version) |= $v'
+  '.version = $v'
+  '.version = $v'
+  '.version = $v'
+)
+
+# Optional plugin label extracted from the read expression (for output formatting)
+label_for() {
+  local file="$1" read_jq="$2"
+  if printf '%s' "$read_jq" | grep -q 'name=='; then
+    local plugin
+    plugin=$(printf '%s' "$read_jq" | sed -nE 's/.*name=="([^"]+)".*/\1/p')
+    printf '%s [%s]' "$file" "$plugin"
+  else
+    printf '%s' "$file"
+  fi
+}
+
+# ── Semver helpers ───────────────────────────────────────────────────────────
+
+is_semver() {
+  [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+}
+
+# Echo -1, 0, or 1 for (a <=> b)
+semver_cmp() {
+  local a="$1" b="$2"
+  if [ "$a" = "$b" ]; then echo 0; return; fi
+  local IFS=.
+  read -ra A <<<"$a"
+  read -ra B <<<"$b"
+  local i
+  for i in 0 1 2; do
+    if [ "${A[$i]}" -lt "${B[$i]}" ]; then echo -1; return; fi
+    if [ "${A[$i]}" -gt "${B[$i]}" ]; then echo 1; return; fi
+  done
+  echo 0
+}
+
+# Read all tracked versions; echo one per line in array order
+read_all_versions() {
+  local i
+  for i in "${!FILES[@]}"; do
+    jq -r "${READS[$i]}" "${FILES[$i]}"
+  done
+}
+
+max_version() {
+  local versions max="0.0.0" v
+  versions="$(read_all_versions)"
+  while IFS= read -r v; do
+    [ -z "$v" ] && continue
+    if [ "$(semver_cmp "$v" "$max")" = "1" ]; then max="$v"; fi
+  done <<<"$versions"
+  echo "$max"
+}
+
+# Compute the next version by bumping the requested component of the current one
+bump_version() {
+  local current="$1" component="$2"
+  local IFS=.
+  read -ra P <<<"$current"
+  case "$component" in
+    major) P[0]=$((P[0]+1)); P[1]=0; P[2]=0 ;;
+    minor) P[1]=$((P[1]+1)); P[2]=0 ;;
+    patch) P[2]=$((P[2]+1)) ;;
+    *) echo "ERROR: unknown bump component: $component (use major|minor|patch)" >&2; exit 2 ;;
+  esac
+  echo "${P[0]}.${P[1]}.${P[2]}"
+}
+
+# ── Working-tree guard ───────────────────────────────────────────────────────
+
+assert_clean_outside_tracked() {
+  local dirty f tf untracked=()
+  dirty="$(git status --porcelain | awk '{print $2}')"
+  [ -z "$dirty" ] && return 0
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    local found=0
+    for tf in "${FILES[@]}"; do
+      if [ "$f" = "$tf" ]; then found=1; break; fi
+    done
+    if [ "$found" = "0" ]; then
+      untracked+=("$f")
+    fi
+  done <<<"$dirty"
+  if [ "${#untracked[@]}" -gt 0 ]; then
+    echo "ERROR: working tree has changes outside the tracked version files:" >&2
+    printf '  - %s\n' "${untracked[@]}" >&2
+    echo "Commit or stash these before running 'bin/version bump|set' (or use --no-commit)." >&2
+    return 1
+  fi
+  return 0
+}
+
+# ── Two-phase write across all locations ─────────────────────────────────────
+
+apply_version() {
+  local new="$1"
+  local WRITTEN_FILES=()
+  local i source f w_jq tf found
+
+  # Phase 1: build .tmp files (each write composes over the previous .tmp if any)
+  for i in "${!FILES[@]}"; do
+    f="${FILES[$i]}"
+    w_jq="${WRITES[$i]}"
+    # Use existing .tmp as source if this file was already written in a prior iteration
+    if [[ -f "${f}.tmp" ]]; then source="${f}.tmp"; else source="$f"; fi
+    if ! jq --arg v "$new" "$w_jq" "$source" > "${f}.tmp.next"; then
+      echo "ERROR: jq failed on $f with expression: $w_jq" >&2
+      rm -f "${f}.tmp.next"
+      for tf in "${WRITTEN_FILES[@]+"${WRITTEN_FILES[@]}"}"; do rm -f "${tf}.tmp"; done
+      return 2
+    fi
+    mv "${f}.tmp.next" "${f}.tmp"
+    found=0
+    for tf in "${WRITTEN_FILES[@]+"${WRITTEN_FILES[@]}"}"; do [[ "$tf" == "$f" ]] && found=1 && break; done
+    [[ $found -eq 0 ]] && WRITTEN_FILES+=("$f")
+  done
+
+  # Phase 2: validate every .tmp before committing any
+  for f in "${WRITTEN_FILES[@]+"${WRITTEN_FILES[@]}"}"; do
+    if ! jq empty "${f}.tmp" 2>/dev/null; then
+      echo "ERROR: post-write JSON invalid in ${f}.tmp; aborting" >&2
+      for tf in "${WRITTEN_FILES[@]}"; do rm -f "${tf}.tmp"; done
+      return 2
+    fi
+  done
+
+  # Phase 3: atomic rename
+  for f in "${WRITTEN_FILES[@]+"${WRITTEN_FILES[@]}"}"; do
+    mv "${f}.tmp" "$f"
+  done
+}
+
+# ── Subcommand: get ──────────────────────────────────────────────────────────
+
+cmd_get() {
+  local i label v width=0
+  local labels=() values=()
+
+  for i in "${!FILES[@]}"; do
+    label="$(label_for "${FILES[$i]}" "${READS[$i]}")"
+    v="$(jq -r "${READS[$i]}" "${FILES[$i]}")"
+    labels+=("$label")
+    values+=("$v")
+    [ ${#label} -gt "$width" ] && width=${#label}
+  done
+
+  for i in "${!labels[@]}"; do
+    printf '%-*s  %s\n' "$width" "${labels[$i]}" "${values[$i]}"
+  done
+
+  # Drift summary
+  local unique count
+  unique="$(printf '%s\n' "${values[@]}" | sort -u)"
+  count="$(printf '%s\n' "$unique" | wc -l | tr -d ' ')"
+  echo
+  if [ "$count" = "1" ]; then
+    echo "OK  All ${#values[@]} locations on the same version: $(printf '%s' "$unique" | head -1)"
+  else
+    local mn mx
+    mn="$(printf '%s\n' "$unique" | sort -V | head -1)"
+    mx="$(printf '%s\n' "$unique" | sort -V | tail -1)"
+    echo "DRIFT  $count distinct versions across ${#values[@]} locations"
+    echo "       min: $mn   max: $mx"
+  fi
+}
+
+# ── Subcommand: bump ─────────────────────────────────────────────────────────
+
+cmd_bump() {
+  local component="${1:-patch}" no_commit="${2:-0}"
+  case "$component" in
+    major|minor|patch) ;;
+    *) echo "ERROR: bump component must be one of: major minor patch" >&2; exit 2 ;;
+  esac
+
+  if [ "$no_commit" = "0" ]; then
+    assert_clean_outside_tracked
+  fi
+
+  local current next
+  current="$(max_version)"
+  next="$(bump_version "$current" "$component")"
+
+  echo "From: $current (max across tracked locations)"
+  echo "  To: $next"
+
+  apply_version "$next" || { echo "ERROR: apply failed" >&2; exit 2; }
+  echo "OK  ${#FILES[@]} locations updated"
+
+  if [ "$no_commit" = "0" ]; then
+    git add "${FILES[@]}"
+    git commit -m "chore: bump version to $next" >/dev/null
+    echo "OK  committed: chore: bump version to $next"
+  else
+    echo "(--no-commit: skipping git commit)"
+  fi
+}
+
+# ── Subcommand: set ──────────────────────────────────────────────────────────
+
+cmd_set() {
+  local target="${1:-}" no_commit="${2:-0}"
+  if [ -z "$target" ]; then
+    echo "ERROR: 'set' requires a target version (e.g., bin/version set 2.0.0)" >&2
+    exit 2
+  fi
+  if ! is_semver "$target"; then
+    echo "ERROR: '$target' is not a valid semver (expected X.Y.Z)" >&2
+    exit 2
+  fi
+
+  if [ "$no_commit" = "0" ]; then
+    assert_clean_outside_tracked
+  fi
+
+  echo "Setting all locations to $target..."
+  apply_version "$target" || { echo "ERROR: apply failed" >&2; exit 2; }
+  echo "OK  ${#FILES[@]} locations updated"
+
+  if [ "$no_commit" = "0" ]; then
+    git add "${FILES[@]}"
+    git commit -m "chore: set version to $target" >/dev/null
+    echo "OK  committed: chore: set version to $target"
+  else
+    echo "(--no-commit: skipping git commit)"
+  fi
+}
+
+# ── Arg parsing ──────────────────────────────────────────────────────────────
+
+usage() {
+  cat <<'EOF'
+bin/version — get, bump, or set the version across all plugin and marketplace
+configurations in gomboc-community-skills.
+
+Usage:
+  bin/version get
+  bin/version bump [major|minor|patch]    # default: patch
+  bin/version set <X.Y.Z>
+
+Flags:
+  --no-commit    Edit files but don't auto-commit the change
+  --help, -h     Show this message
+
+bump and set auto-commit with message "chore: bump version to X.Y.Z" unless
+--no-commit is passed. They refuse to run when the working tree has changes
+outside the tracked version files (keeps the version-bump commit clean).
+EOF
+}
+
+NO_COMMIT=0
+ARGS=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --help|-h)   usage; exit 0 ;;
+    --no-commit) NO_COMMIT=1; shift ;;
+    *)           ARGS+=("$1"); shift ;;
+  esac
+done
+
+if [ "${#ARGS[@]}" -eq 0 ]; then
+  usage
+  exit 1
+fi
+
+SUB="${ARGS[0]}"
+case "$SUB" in
+  get)    cmd_get ;;
+  bump)   cmd_bump "${ARGS[1]:-patch}" "$NO_COMMIT" ;;
+  set)    cmd_set "${ARGS[1]:-}" "$NO_COMMIT" ;;
+  *)      echo "ERROR: unknown subcommand: $SUB" >&2; usage >&2; exit 2 ;;
+esac
