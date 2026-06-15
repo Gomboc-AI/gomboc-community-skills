@@ -1,0 +1,39 @@
+{
+  "name": "gomboc-community",
+  "version": "2.1.0",
+  "description": "Scan, fix, and create ORL rules for Terraform, HCL, CloudFormation, Bicep, Dockerfile, Kubernetes, and Python.",
+  "author": {
+    "name": "Gomboc AI",
+    "email": "community@gomboc.ai"
+  },
+  "homepage": "https://gomboc.ai",
+  "repository": "https://github.com/Gomboc-AI/gomboc-community-skills",
+  "license": "MIT",
+  "keywords": [
+    "orl",
+    "infrastructure-as-code",
+    "terraform",
+    "cloudformation",
+    "bicep",
+    "dockerfile",
+    "kubernetes",
+    "python",
+    "sentinel",
+    "security",
+    "remediation",
+    "compliance",
+    "devsecops"
+  ],
+  "skills": [
+    "./skills/add-metadata/",
+    "./skills/apply-fix/",
+    "./skills/build-rule/",
+    "./skills/cleanup-rule/",
+    "./skills/convert-sentinel/",
+    "./skills/diagnose/",
+    "./skills/plan-rule/",
+    "./skills/push-rule/",
+    "./skills/remediate/"
+  ],
+  "commands": "./commands/"
+}

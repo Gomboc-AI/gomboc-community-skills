@@ -19,11 +19,32 @@
     "dockerfile",
     "kubernetes",
     "python",
+    "sentinel",
     "security",
     "remediation",
     "compliance",
     "devops",
     "devsecops",
     "appsec"
+  ],
+  "commands": "./commands/",
+  "userConfig": {
+    "GOMBOC_PAT": {
+      "title": "Gomboc Personal Access Token",
+      "type": "string",
+      "description": "Free token from https://app.gomboc.ai — required for scan, fix, and remediate commands.",
+      "sensitive": true
+    }
+  },
+  "skills": [
+    "./skills/add-metadata/SKILL.md",
+    "./skills/apply-fix/SKILL.md",
+    "./skills/build-rule/SKILL.md",
+    "./skills/cleanup-rule/SKILL.md",
+    "./skills/convert-sentinel/SKILL.md",
+    "./skills/diagnose/SKILL.md",
+    "./skills/plan-rule/SKILL.md",
+    "./skills/push-rule/SKILL.md",
+    "./skills/remediate/SKILL.md"
   ]
 }

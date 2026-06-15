@@ -1,0 +1,47 @@
+{
+  "name": "gomboc-community",
+  "version": "2.1.0",
+  "description": "Scan, fix, and create ORL rules for Terraform, HCL, CloudFormation, Bicep, Dockerfile, Kubernetes, and Python.",
+  "skills": "./skills/",
+  "env": [
+    {
+      "name": "GOMBOC_PAT",
+      "description": "Gomboc Community Personal Access Token. Obtain free at https://app.gomboc.ai — required for scan, fix, and remediate commands.",
+      "required": true,
+      "secret": true
+    }
+  ],
+  "author": {
+    "name": "Gomboc AI",
+    "email": "community@gomboc.ai",
+    "url": "https://gomboc.ai"
+  },
+  "license": "MIT",
+  "keywords": [
+    "orl",
+    "infrastructure-as-code",
+    "terraform",
+    "cloudformation",
+    "bicep",
+    "dockerfile",
+    "kubernetes",
+    "python",
+    "sentinel",
+    "security",
+    "remediation",
+    "compliance",
+    "devsecops"
+  ],
+  "interface": {
+    "displayName": "Gomboc Community",
+    "shortDescription": "Community ORL rule creation, security scanning, and deterministic fix delivery for IaC and application code.",
+    "longDescription": "Gomboc Community provides free, deterministic security remediations powered by the ORL Engine. Scan infrastructure code for issues, generate merge-ready fixes (94%+ acceptance rate), and create your own ORL rules for Terraform, CloudFormation, Bicep, Kubernetes, and more. Community Edition is free forever.",
+    "developerName": "Gomboc AI",
+    "category": "Security",
+    "capabilities": [
+      "skills"
+    ],
+    "websiteURL": "https://gomboc.ai",
+    "defaultPrompt": "Scan my infrastructure code for security issues and generate fixes."
+  }
+}

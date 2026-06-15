@@ -1,0 +1,14 @@
+{
+  "name": "gomboc-community",
+  "version": "2.1.0",
+  "settings": [
+    {
+      "name": "Gomboc Personal Access Token",
+      "description": "Free token from https://app.gomboc.ai — required for scan, fix, and remediate commands.",
+      "envVar": "GOMBOC_PAT",
+      "required": true,
+      "sensitive": true
+    }
+  ],
+  "contextFileName": "GEMINI.md"
+}
