@@ -137,10 +137,19 @@ function normalizeOrlReport(report) {
   const spec = report.spec || {};
   const totals = totalsFromReport(spec);
   const display = report.metadata?.display_name?.trim();
+  // v2.2.2: orlReport schema is now strict (no additionalProperties). Fields that were previously
+  // sent as top-level extras are moved into metadata.annotations (values must be strings).
+  const annotations = {
+    ...(display ? { display_name: display } : {}),
+    ...(Array.isArray(spec.errors) && spec.errors.length > 25 ? { errors_total: String(spec.errors.length) } : {}),
+    ...(spec.duration !== undefined ? { duration: String(spec.duration) } : {}),
+    ...(spec.rules_skipped !== undefined ? { rules_skipped: String(spec.rules_skipped) } : {}),
+    ...(spec.resolved_location_count !== undefined ? { resolved_location_count: String(spec.resolved_location_count) } : {}),
+  };
   const metadata = {
     name: report.metadata?.name ?? 'orl-report',
     ...(trimDescription(report.metadata?.description) ? { description: trimDescription(report.metadata.description) } : {}),
-    ...(display ? { annotations: { display_name: display } } : {}),
+    ...(Object.keys(annotations).length > 0 ? { annotations } : {}),
   };
   return {
     type: 'Report',
@@ -152,12 +161,8 @@ function normalizeOrlReport(report) {
     findings: totals.findings,
     fixes: totals.fixes,
     changes: totals.changes,
-    rules: [],                       // keep the payload lean.
+    rules: [],
     errors: trimErrors(spec.errors),
-    errorsTotal: Array.isArray(spec.errors) ? spec.errors.length : 0,
-    ...(spec.duration !== undefined ? { duration: spec.duration } : {}),
-    ...(spec.rules_skipped !== undefined ? { rules_skipped: spec.rules_skipped } : {}),
-    ...(spec.resolved_location_count !== undefined ? { resolved_location_count: spec.resolved_location_count } : {}),
   };
 }
 
@@ -235,16 +240,15 @@ async function main() {
   const orlReport = normalizeOrlReport(report);
   const reportDur = parseGoDuration(report?.spec?.duration);
   if (reportDur != null) a.duration = reportDur;
-  orlReport.scanId = computeScanId(a, orlReport);
-  if (a.commit) orlReport.commit = a.commit;
+  const scanId = computeScanId(a, orlReport);
 
   if (a['dry-run']) {
     console.log(JSON.stringify(buildBody(a, orlReport, true), null, 2));
     return;
   }
 
-  if (!a.force && ledgerHas(orlReport.scanId)) {
-    console.log(`submit-orl-report: scan ${orlReport.scanId.slice(0, 12)} already submitted — `
+  if (!a.force && ledgerHas(scanId)) {
+    console.log(`submit-orl-report: scan ${scanId.slice(0, 12)} already submitted — `
       + `rejecting as duplicate (client-side; pass --force to override).`);
     process.exit(0);
   }
@@ -281,9 +285,9 @@ async function main() {
       ? await sdk.createOrlReportEventV2(body)
       : await sdk.createOrlReportEvent(body);
     if (result?.isOk?.()) {
-      ledgerAdd(orlReport.scanId);
+      ledgerAdd(scanId);
       const d = useV2 ? (result.value?.data ?? {}) : (result.value ?? {});
-      console.log(`submit-orl-report: submitted scan ${orlReport.scanId.slice(0, 12)} `
+      console.log(`submit-orl-report: submitted scan ${scanId.slice(0, 12)} `
         + `(${orlReport.findings} findings, ${orlReport.fixes} fixes) to ${baseUrl}`
         + (d.jobId ? ` [jobId=${d.jobId}]` : '')
         + (d.message ? ` — ${d.message}` : '')
@@ -293,7 +297,7 @@ async function main() {
       const status = err.statusCode ?? '?';
       const dup = status === 409 || /duplicat/i.test(JSON.stringify(err));
       warn(`Integrations POST ${dup ? 'rejected as duplicate' : 'failed'} (${status}) for scan `
-        + `${orlReport.scanId.slice(0, 12)}: ${JSON.stringify(err).slice(0, 300)} — non-blocking.`);
+        + `${scanId.slice(0, 12)}: ${JSON.stringify(err).slice(0, 300)} — non-blocking.`);
     }
   } catch (e) {
     warn(`submission error: ${e.message} — non-blocking.`);
