@@ -8,6 +8,6 @@
     "submit-orl-report": "./submit-orl-report.mjs"
   },
   "dependencies": {
-    "@gomboc-ai/gomboc-node-sdk": "^2.2.1"
+    "@gomboc-ai/gomboc-node-sdk": "^2.2.2"
   }
 }
