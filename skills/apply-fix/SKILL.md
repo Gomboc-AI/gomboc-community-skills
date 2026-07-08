@@ -34,14 +34,26 @@ If the rule is local (e.g., in `/orl-rules/final/`, `.orl-rules/`, or `.orl-fixe
 
 1. **Dry-run remediation** to preview changes:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <local-rule-path> <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <local-rule-path> --out /workspace/.orl-report.yaml <target-path>
+   ```
+   Then submit the dry-run report (non-blocking):
+   ```bash
+   python3 "$(dirname "$0")/../../scripts/integrations/submit_orl_report.py" \
+     --report "${PWD}/.orl-report.yaml" --workspace "${PWD}" \
+     --branch "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')" --duration 0
    ```
 
 2. **Show the diff** to the user and explain what will change.
 
 3. **On confirmation**, apply the fix:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <local-rule-path> <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <local-rule-path> --out /workspace/.orl-report.yaml <target-path>
+   ```
+   Then submit the apply report (non-blocking):
+   ```bash
+   python3 "$(dirname "$0")/../../scripts/integrations/submit_orl_report.py" \
+     --report "${PWD}/.orl-report.yaml" --workspace "${PWD}" \
+     --branch "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')" --duration 0
    ```
 
 4. **Report** which files were changed and what was fixed.
@@ -63,14 +75,26 @@ If the rule is in the Gomboc Rules Service, pull it first. Use the `--search` fl
 
 2. **Dry-run remediation** to preview changes:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <pulled-rule-dir> <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <pulled-rule-dir> --out /workspace/.orl-report.yaml <target-path>
+   ```
+   Then submit the dry-run report (non-blocking):
+   ```bash
+   python3 "$(dirname "$0")/../../scripts/integrations/submit_orl_report.py" \
+     --report "${PWD}/.orl-report.yaml" --workspace "${PWD}" \
+     --branch "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')" --duration 0
    ```
 
 3. **Show the diff** to the user and explain what will change.
 
 4. **On confirmation**, apply the fix:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <pulled-rule-dir> <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <pulled-rule-dir> --out /workspace/.orl-report.yaml <target-path>
+   ```
+   Then submit the apply report (non-blocking):
+   ```bash
+   python3 "$(dirname "$0")/../../scripts/integrations/submit_orl_report.py" \
+     --report "${PWD}/.orl-report.yaml" --workspace "${PWD}" \
+     --branch "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')" --duration 0
    ```
 
 5. **Report** which files were changed and what was fixed.
@@ -200,14 +224,26 @@ Once tests pass:
 
 1. **Dry-run** against the user's actual code:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r .orl-fixes/<rule-name> <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r .orl-fixes/<rule-name> --out /workspace/.orl-report.yaml <target-path>
+   ```
+   Then submit the dry-run report (non-blocking):
+   ```bash
+   python3 "$(dirname "$0")/../../scripts/integrations/submit_orl_report.py" \
+     --report "${PWD}/.orl-report.yaml" --workspace "${PWD}" \
+     --branch "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')" --duration 0
    ```
 
 2. **Show the diff** to the user.
 
 3. **On confirmation**, apply:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r .orl-fixes/<rule-name> <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r .orl-fixes/<rule-name> --out /workspace/.orl-report.yaml <target-path>
+   ```
+   Then submit the apply report (non-blocking):
+   ```bash
+   python3 "$(dirname "$0")/../../scripts/integrations/submit_orl_report.py" \
+     --report "${PWD}/.orl-report.yaml" --workspace "${PWD}" \
+     --branch "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')" --duration 0
    ```
 
 4. **Report** which files were changed.
@@ -236,3 +272,22 @@ Before declaring a fix complete:
 - [ ] `indent` flag used instead of hardcoded spaces in values
 - [ ] Dry-run output matches expected changes
 - [ ] User confirmed the diff before applying
+
+## Submitting remediation results to Gomboc Integrations
+
+Every `orl remediate` run — dry-run or real apply — emits a `--out` report which is
+submitted to the Gomboc Integrations service via `scripts/integrations/submit_orl_report.py`.
+The inline submission calls shown in each step above handle this automatically.
+
+Auth uses `GOMBOC_PAT` (the token already configured for scan/fix commands). Submission is
+**non-blocking** — skipped silently if the SDK is not installed, the token is absent, or the
+network is unavailable. It must never block or fail a fix workflow.
+
+**Setup (one-time):** run `npm install` in `scripts/integrations/` with a GitHub token that
+has `read:packages` scope:
+```bash
+(cd scripts/integrations && GITHUB_TOKEN=<read:packages PAT> npm install)
+```
+
+The submitter stamps a deterministic `scanId` and deduplicates client-side, so re-submitting
+the same scan is a no-op.
