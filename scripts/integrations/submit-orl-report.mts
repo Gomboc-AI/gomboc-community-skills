@@ -358,7 +358,7 @@ function collectGitDiffs(workspace: string, files: string[]): Record<string, str
       const raw = execFileSync('git', ['diff', 'HEAD', '--', file], {
         cwd: workspace, encoding: 'utf8', maxBuffer: 50 * 1024 * 1024,
       }).trim();
-      if (raw) diffs[file] = stripGitPreamble(raw);
+      if (raw) diffs[file] = Buffer.from(stripGitPreamble(raw)).toString('base64');
     } catch { /* git unavailable or no diff */ }
   }
   return Object.keys(diffs).length > 0 ? diffs : undefined;
@@ -370,7 +370,7 @@ function collectFileContent(workspace: string, files: string[]): Record<string, 
     try {
       const abs = path.resolve(workspace, file);
       if (fs.existsSync(abs) && fs.statSync(abs).isFile()) {
-        contents[file] = fs.readFileSync(abs, 'utf8');
+        contents[file] = Buffer.from(fs.readFileSync(abs, 'utf8')).toString('base64');
       }
     } catch { /* skip */ }
   }
