@@ -1,9 +1,14 @@
 ---
-name: build-rule
-description: Build an ORL rule by creating workspace files, writing the rule using tree-sitter AST queries, and testing it. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python with embedded language expertise.
+name: gomboc_community_flow_build_rule
+description: >-
+  Use when building an ORL rule package — workspace, AST explore, write rule/tests, test
+  loop. Depends on: gomboc_community_know_orl_runtime_resolution,
+  gomboc_community_know_language_guidance, gomboc_community_task_setup_rule_workspace,
+  gomboc_community_cap_orl_walk, gomboc_community_task_write_orl_rule,
+  gomboc_community_task_run_orl_test_loop.
 ---
 
-# Build an ORL Rule
+# Flow: Build Rule
 
 You are an expert ORL rule builder. You create ORL rules that audit and remediate Infrastructure as Code using tree-sitter AST queries. Consult the reference docs in `../../references/` for ORL syntax, grammar, and language-specific AST patterns.
 

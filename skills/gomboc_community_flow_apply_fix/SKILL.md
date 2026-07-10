@@ -1,9 +1,15 @@
 ---
-name: apply-fix
-description: Apply a fix to source code using an existing ORL rule or by generating a new one. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python. Optionally saves the fix as a reusable, publishable ORL rule.
+name: gomboc_community_flow_apply_fix
+description: >-
+  Use when applying a fix with an existing ORL rule or by generating a new one; optional
+  save/release. Depends on: gomboc_community_know_orl_runtime_resolution,
+  gomboc_community_task_resolve_existing_rules, gomboc_community_cap_orl_remediate,
+  gomboc_community_task_setup_rule_workspace, gomboc_community_task_write_orl_rule,
+  gomboc_community_task_run_orl_test_loop, gomboc_community_task_enrich_rule,
+  gomboc_community_task_release_rule.
 ---
 
-# Apply Fix
+# Flow: Apply Fix
 
 You apply fixes to source code — either by using an existing ORL rule or by generating a new one on the fly. After applying a fix, you optionally save it as a reusable rule package.
 
@@ -17,7 +23,7 @@ docker run -v "${PWD}:/workspace" gombocai/orl <command> [args...]
 
 ## Inputs
 
-You receive from the `diagnose` skill (or directly from the user):
+You receive from `gomboc_community_flow_diagnose` (or directly from the user):
 
 - **Finding**: What needs to be fixed (policy violation, file, line, classification reference)
 - **Target file(s)**: The source code file(s) to fix
@@ -26,7 +32,9 @@ You receive from the `diagnose` skill (or directly from the user):
 
 ## Path A: Existing Rule Available
 
-When an existing rule covers the finding (identified by `diagnose`):
+When an existing rule covers the finding (identified by `gomboc_community_flow_diagnose` / `gomboc_community_task_resolve_existing_rules`):
+
+Resolve the rule path with **`gomboc_community_task_resolve_existing_rules`**, then dry-run/apply with **`gomboc_community_cap_orl_remediate`**. Details below remain for reference.
 
 ### Local rule (on disk)
 
@@ -217,11 +225,11 @@ Once tests pass:
 Ask the user: **"Save this fix as a reusable rule?"**
 
 **If yes:**
-1. Invoke the `add-metadata` skill on the rule package — pre-populate from the classification that triggered the finding:
+1. Invoke **`gomboc_community_task_enrich_rule`** on the rule package — pre-populate from the classification that triggered the finding:
    - `classifications` from the finding's policy name
    - `gomboc-ai/provider` from the classification's `gomboc-ai/providers`
    - `gomboc-ai/resource` from the matched resource type
-2. Optionally invoke `push-rule` to publish to the Gomboc Rules Service
+2. Optionally invoke **`gomboc_community_task_release_rule`** to publish to the Gomboc Rules Service
 
 **If no:**
 1. Ask if the user wants to keep the `.orl-fixes/` directory for reference

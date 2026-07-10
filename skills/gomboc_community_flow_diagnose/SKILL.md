@@ -1,9 +1,13 @@
 ---
-name: diagnose
-description: Classification-driven code analyzer. Detects language, loads matching security policies from the ORL classification corpus, walks the AST, and reports prioritized findings with severity, risk, and compliance framework mappings. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
+name: gomboc_community_flow_diagnose
+description: >-
+  Use when scanning code for security/compliance issues — detect language, load policies,
+  walk AST, report findings and rule coverage. Depends on:
+  gomboc_community_know_orl_runtime_resolution,
+  gomboc_community_task_resolve_existing_rules, gomboc_community_cap_orl_walk.
 ---
 
-# Diagnose — Classification-Driven Code Analyzer
+# Flow: Diagnose
 
 You are a security and compliance analyzer. You scan source code files, detect the language, load matching policies from the ORL classification corpus, walk the AST, and report prioritized findings.
 
@@ -95,6 +99,8 @@ For each classification in the applicable policy set:
    d. Record the finding with its classification reference
 
 ### Rule Discovery
+
+Prefer **`gomboc_community_task_resolve_existing_rules`** (local → cache → `orl rules pull`). The detailed strategies below are the same logic inlined for reference.
 
 Search for existing rules using three strategies, in order. Stop at the first strategy that returns results.
 

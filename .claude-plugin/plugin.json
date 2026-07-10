@@ -37,14 +37,28 @@
     }
   },
   "skills": [
-    "./skills/add-metadata/SKILL.md",
-    "./skills/apply-fix/SKILL.md",
-    "./skills/build-rule/SKILL.md",
-    "./skills/cleanup-rule/SKILL.md",
-    "./skills/convert-sentinel/SKILL.md",
-    "./skills/diagnose/SKILL.md",
-    "./skills/plan-rule/SKILL.md",
-    "./skills/push-rule/SKILL.md",
-    "./skills/remediate/SKILL.md"
+    "./skills/gomboc_community_cap_orl_remediate/SKILL.md",
+    "./skills/gomboc_community_cap_orl_rules_pull/SKILL.md",
+    "./skills/gomboc_community_cap_orl_rules_push/SKILL.md",
+    "./skills/gomboc_community_cap_orl_walk/SKILL.md",
+    "./skills/gomboc_community_cap_run_orl_test/SKILL.md",
+    "./skills/gomboc_community_flow_apply_fix/SKILL.md",
+    "./skills/gomboc_community_flow_build_rule/SKILL.md",
+    "./skills/gomboc_community_flow_convert_sentinel/SKILL.md",
+    "./skills/gomboc_community_flow_create_rule/SKILL.md",
+    "./skills/gomboc_community_flow_diagnose/SKILL.md",
+    "./skills/gomboc_community_flow_fix/SKILL.md",
+    "./skills/gomboc_community_flow_review_rule/SKILL.md",
+    "./skills/gomboc_community_know_language_guidance/SKILL.md",
+    "./skills/gomboc_community_know_orl_runtime_resolution/SKILL.md",
+    "./skills/gomboc_community_know_release_checklist/SKILL.md",
+    "./skills/gomboc_community_know_sentinel_conversion/SKILL.md",
+    "./skills/gomboc_community_task_enrich_rule/SKILL.md",
+    "./skills/gomboc_community_task_orl_planner/SKILL.md",
+    "./skills/gomboc_community_task_release_rule/SKILL.md",
+    "./skills/gomboc_community_task_resolve_existing_rules/SKILL.md",
+    "./skills/gomboc_community_task_run_orl_test_loop/SKILL.md",
+    "./skills/gomboc_community_task_setup_rule_workspace/SKILL.md",
+    "./skills/gomboc_community_task_write_orl_rule/SKILL.md"
   ]
 }

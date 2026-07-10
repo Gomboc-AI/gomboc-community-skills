@@ -1,9 +1,12 @@
 ---
-name: push-rule
-description: Push a completed ORL rule to the Gomboc Rules Service using a Personal Access Token. Validates the rule package and runs tests before pushing.
+name: gomboc_community_task_release_rule
+description: >-
+  Use when validating a rule package and pushing it to the Gomboc Rules Service. Depends
+  on: gomboc_community_know_orl_runtime_resolution, gomboc_community_cap_run_orl_test,
+  gomboc_community_cap_orl_rules_push.
 ---
 
-# Push Rule to Gomboc Rules Service
+# Task: Release Rule
 
 You push completed ORL rule packages to the Gomboc Rules Service so they can be used for automated remediation.
 
@@ -40,27 +43,11 @@ If any required files are missing, report the issue and stop.
 
 ### 2. Run Tests
 
-```bash
-docker run -v "${PWD}:/workspace" gombocai/orl test .
-```
-
-All tests MUST pass before pushing. If tests fail, report the failures and stop. Do not push a rule with failing tests.
+Invoke **`gomboc_community_cap_run_orl_test`**. All tests MUST pass before pushing. If tests fail, report the failures and stop.
 
 ### 3. Push to Rules Service
 
-Pass the `RULE_SERVICE_TOKEN` environment variable to the Docker container using `-e`:
-
-```bash
-docker run -v "${PWD}:/workspace" -e "${RULE_SERVICE_TOKEN}" gombocai/orl rules push .
-```
-
-The `-e RULE_SERVICE_TOKEN` flag forwards the host environment variable into the container. The user must have it set in their shell:
-
-```bash
-export RULE_SERVICE_TOKEN=your-personal-access-token
-```
-
-**Important**: Never log, display, or store the token value. If the token is not set, instruct the user to set it with the `export` command above.
+Invoke **`gomboc_community_cap_orl_rules_push`**. Ensure `RULE_SERVICE_TOKEN` (or `GOMBOC_PAT` mapped per the know skill) is set. Never log the token.
 
 ### 4. Report Result
 

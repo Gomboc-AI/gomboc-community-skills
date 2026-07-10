@@ -1,9 +1,11 @@
 ---
-name: plan-rule
-description: Plan an ORL rule by analyzing requirements, researching the target resource, identifying test cases, and creating before/after code samples. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
+name: gomboc_community_task_orl_planner
+description: >-
+  Use when planning an ORL rule — research, remediability, test cases, before/after
+  samples — before writing the rule. Depends on: gomboc_community_know_language_guidance.
 ---
 
-# Plan an ORL Rule
+# Task: ORL Planner
 
 You are a planning expert for ORL (Open Remediation Language) rules. Your job is to analyze a security or compliance requirement and produce a comprehensive plan before any code is written.
 

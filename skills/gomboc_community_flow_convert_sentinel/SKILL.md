@@ -1,9 +1,14 @@
 ---
-name: convert-sentinel
-description: Convert a HashiCorp Sentinel policy into one or more ORL rules. Reads a Sentinel policy from a URL or file path, analyzes its intent, decides audit-only vs fix strategy, builds the ORL rule package with tests, and optionally pushes it to the user's Gomboc account.
+name: gomboc_community_flow_convert_sentinel
+description: >-
+  Use when converting a HashiCorp Sentinel policy into one or more ORL rules. Depends on:
+  gomboc_community_know_orl_runtime_resolution, gomboc_community_know_sentinel_conversion,
+  gomboc_community_task_setup_rule_workspace, gomboc_community_task_write_orl_rule,
+  gomboc_community_task_run_orl_test_loop, gomboc_community_task_enrich_rule,
+  gomboc_community_task_release_rule.
 ---
 
-# Convert Sentinel Policy to ORL
+# Flow: Convert Sentinel
 
 You convert HashiCorp Sentinel policies into ORL (Open Remediation Language) rules. You read the Sentinel source, understand its intent, translate the enforcement logic into tree-sitter AST queries, build a tested rule package, and optionally publish it.
 
@@ -15,14 +20,9 @@ All `orl` commands MUST be run via Docker, mounting the current working director
 docker run -v "${PWD}:/workspace" gombocai/orl <command> [args...]
 ```
 
-## The Paradigm Shift
+## Paradigm and limits
 
-Understanding this difference is critical to a correct conversion:
-
-- **Sentinel** checks the **Terraform State/Plan** — it has access to fully rendered objects, resolved variables, module relationships, and computed values (e.g., `tfplan.resource_changes`).
-- **ORL** works on the **Source Code** (AST) — it uses tree-sitter queries to match and modify patterns directly in `.tf` files, before Terraform runs.
-
-Because of this, converting a Sentinel policy is NOT a 1:1 translation. An ORL rule defines patterns based on how developers *write* code, not the final computed state. Some Sentinel checks have no ORL equivalent (e.g., checking computed outputs or cross-module references).
+Load **`gomboc_community_know_sentinel_conversion`** before converting — Sentinel state/plan vs ORL source AST, strategy categories, and conversion limits. Do not restate that material here.
 
 ## Inputs
 
@@ -113,7 +113,7 @@ Create workspace files that exercise all code paths from the original Sentinel p
 
 ### Step 5: Write the ORL Rules
 
-Use the `build-rule` skill's Terraform-specific knowledge to write tree-sitter queries. Since Sentinel policies target Terraform, use Terraform template helpers:
+Use **`gomboc_community_flow_build_rule`** / **`gomboc_community_know_language_guidance`** Terraform notes to write tree-sitter queries. Since Sentinel policies target Terraform, use Terraform template helpers:
 
 - `aResource("type", ...)` — Match a resource by type
 - `anAttribute("key")` — Match an attribute by name
@@ -217,7 +217,7 @@ Would you like to share this rule to your Gomboc account?
 [1/2]
 ```
 
-**If yes:** Invoke the `push-rule` skill:
+**If yes:** Invoke **`gomboc_community_task_release_rule`**:
 1. Verify `RULE_SERVICE_TOKEN` is set
 2. Run tests one final time
 3. Push: `docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules push .`

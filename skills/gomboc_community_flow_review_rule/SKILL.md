@@ -1,9 +1,13 @@
 ---
-name: cleanup-rule
-description: Evaluate an ORL rule package against release standards, fix all blocking issues and required metadata gaps automatically, and produce a detailed report. Reads or creates a rule-assessment.md, then remediates the package to comply with the orl-release-rule process. Asks the user for input only when information cannot be inferred from the rule itself.
+name: gomboc_community_flow_review_rule
+description: >-
+  Use when evaluating a rule package against release standards, auto-fixing blocking gaps,
+  and producing a report. Depends on: gomboc_community_know_orl_runtime_resolution,
+  gomboc_community_know_release_checklist, gomboc_community_cap_run_orl_test,
+  gomboc_community_task_enrich_rule.
 ---
 
-# Cleanup Rule — Pre-Release Compliance Fixer
+# Flow: Review Rule
 
 You are a release-readiness engineer for ORL rule packages. Your job is to evaluate a rule package, identify every gap that would block or complicate the `orl-release-rule` process, and **fix all blocking issues and required metadata gaps directly**. You only produce a checklist for recommended (non-blocking) improvements.
 
@@ -127,7 +131,7 @@ For missing output artifacts, generate minimal placeholder files:
 |----------|----------------------|
 | `outputs/plan.md` | Generate from rule content: list the target resource, language, policy objective, sub-rules, and test cases. |
 | `outputs/build.md` | Generate a summary: sub-rule count, test result, commands used. |
-| `outputs/review.md` | Generate: list rule names, spec compliance notes, "Reviewed by cleanup-rule skill". |
+| `outputs/review.md` | Generate: list rule names, spec compliance notes, "Reviewed by gomboc_community_flow_review_rule". |
 | `outputs/test-plan.md` | Generate from workspace file names: list test cases with expected outcomes. |
 | `outputs/enrich.md` | Generate: list the metadata fields that were added/updated by this cleanup run. |
 | `outputs/scanner-validation.md` | If not IaC or scanner IDs unknown: write `Skipped: scanner validation not applicable or scanner policy ID not available.` |
@@ -180,9 +184,9 @@ Now that all blocking issues and metadata gaps have been fixed, invoke the `orl-
 3. **Record the new score** for the cleanup report:
    - Extract the new total score and recommendation (APPROVE / APPROVE_WITH_NOTES / CONDITIONAL / DENY)
    - Compare to the original score to show improvement
-   - If the new assessment is DENY or CONDITIONAL, report the remaining issues to the user — these may require manual intervention beyond what cleanup-rule can auto-fix
+   - If the new assessment is DENY or CONDITIONAL, report the remaining issues to the user — these may require manual intervention beyond what this flow can auto-fix
 
-**Expected outcome:** The re-assessment should score higher on criterion 9 (Metadata Comprehensiveness) since missing annotations, classification prefixes, and output artifacts have been fixed. Other criteria should remain unchanged since cleanup-rule does not modify audit queries, remediation logic, or test cases.
+**Expected outcome:** The re-assessment should score higher on criterion 9 (Metadata Comprehensiveness) since missing annotations, classification prefixes, and output artifacts have been fixed. Other criteria should remain unchanged since this flow does not modify audit queries, remediation logic, or test cases.
 
 ### Step 7: Generate Report
 
