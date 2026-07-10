@@ -34,7 +34,7 @@ If the rule is local (e.g., in `/orl-rules/final/`, `.orl-rules/`, or `.orl-fixe
 
 1. **Dry-run remediation** to preview changes:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <local-rule-path> --out /workspace/.orl-report.yaml <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <local-rule-path> --include-location-info --out /workspace/.orl-report.yaml <target-path>
    ```
    Then submit the dry-run report (non-blocking):
    ```bash
@@ -47,7 +47,7 @@ If the rule is local (e.g., in `/orl-rules/final/`, `.orl-rules/`, or `.orl-fixe
 
 3. **On confirmation**, apply the fix:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <local-rule-path> --out /workspace/.orl-report.yaml <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <local-rule-path> --include-location-info --out /workspace/.orl-report.yaml <target-path>
    ```
    Then submit the apply report (non-blocking):
    ```bash
@@ -75,7 +75,7 @@ If the rule is in the Gomboc Rules Service, pull it first. Use the `--search` fl
 
 2. **Dry-run remediation** to preview changes:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <pulled-rule-dir> --out /workspace/.orl-report.yaml <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r <pulled-rule-dir> --include-location-info --out /workspace/.orl-report.yaml <target-path>
    ```
    Then submit the dry-run report (non-blocking):
    ```bash
@@ -88,7 +88,7 @@ If the rule is in the Gomboc Rules Service, pull it first. Use the `--search` fl
 
 4. **On confirmation**, apply the fix:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <pulled-rule-dir> --out /workspace/.orl-report.yaml <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r <pulled-rule-dir> --include-location-info --out /workspace/.orl-report.yaml <target-path>
    ```
    Then submit the apply report (non-blocking):
    ```bash
@@ -224,7 +224,7 @@ Once tests pass:
 
 1. **Dry-run** against the user's actual code:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r .orl-fixes/<rule-name> --out /workspace/.orl-report.yaml <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language <lang> -r .orl-fixes/<rule-name> --include-location-info --out /workspace/.orl-report.yaml <target-path>
    ```
    Then submit the dry-run report (non-blocking):
    ```bash
@@ -237,7 +237,7 @@ Once tests pass:
 
 3. **On confirmation**, apply:
    ```bash
-   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r .orl-fixes/<rule-name> --out /workspace/.orl-report.yaml <target-path>
+   docker run -v "${PWD}:/workspace" gombocai/orl remediate --language <lang> -r .orl-fixes/<rule-name> --include-location-info --out /workspace/.orl-report.yaml <target-path>
    ```
    Then submit the apply report (non-blocking):
    ```bash
