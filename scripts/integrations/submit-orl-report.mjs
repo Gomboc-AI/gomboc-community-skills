@@ -150,8 +150,13 @@ function mapFindingLocation(row) {
     const status = toResolutionStatus(row.resolution_status);
     if (status)
         loc.resolutionStatus = status;
-    if (row.remediated !== undefined)
+    // ORL emits resolution_status but not remediated; derive it when not explicit
+    if (row.remediated !== undefined) {
         loc.remediated = row.remediated;
+    }
+    else if (row.resolution_status !== undefined) {
+        loc.remediated = row.resolution_status === 'shifted' || row.resolution_status === 'deleted';
+    }
     if (row.remediateable !== undefined)
         loc.remediateable = row.remediateable;
     if (row.message)
@@ -164,13 +169,19 @@ function mapRule(rule) {
     const meta = rule.metadata;
     const findingLocations = (rule.finding_locations ?? []).map(mapFindingLocation);
     const findings = rule.findings ?? rule.finding_locations?.length ?? 0;
+    // Derive files from finding_locations when rule.files is absent
+    const files = rule.files?.length
+        ? rule.files
+        : [...new Set((rule.finding_locations ?? [])
+                .map(fl => fl.original_location?.file_path)
+                .filter((p) => Boolean(p)))].map(p => ({ path: p }));
     return {
         name: rule.name,
         findings,
         fixes: rule.fixes ?? 0,
         changes: rule.changes ?? 0,
         errors: rule.errors ?? [],
-        files: rule.files ?? [],
+        files,
         metadata: {
             name: meta?.name?.trim() || rule.name,
             ...(meta?.description ? { description: meta.description } : {}),
