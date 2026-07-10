@@ -234,8 +234,22 @@ async function main() {
   const a = parseArgs(process.argv.slice(2));
   if (!a.report) skip('no --report path given');
   let report;
-  try { report = JSON.parse(fs.readFileSync(a.report, 'utf8')); }
-  catch (e) { skip(`could not read/parse report ${a.report}: ${e.message}`); }
+  const reportText = fs.readFileSync(a.report, 'utf8');
+  try {
+    report = JSON.parse(reportText);
+  } catch {
+    // orl writes YAML by default; convert via Python (available in all Gomboc environments)
+    try {
+      const { execSync } = await import('node:child_process');
+      const jsonText = execSync(
+        'python3 -c "import sys,json,yaml; print(json.dumps(yaml.safe_load(sys.stdin)))"',
+        { input: reportText, encoding: 'utf8' }
+      );
+      report = JSON.parse(jsonText);
+    } catch (e) {
+      skip(`could not parse report ${a.report} as JSON or YAML: ${e.message}`);
+    }
+  }
 
   const orlReport = normalizeOrlReport(report);
   const reportDur = parseGoDuration(report?.spec?.duration);
