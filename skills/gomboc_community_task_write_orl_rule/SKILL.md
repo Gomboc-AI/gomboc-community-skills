@@ -19,10 +19,14 @@ description: >-
 
 ## Process
 
-1. Explore AST with **`gomboc_community_cap_orl_walk`**.
-2. Write `<name>.orl` with `metadata` stub and `spec` (audit + optional remediation).
-3. Write `test.orl` covering negative and positive cases.
-4. Consult **`gomboc_community_know_language_guidance`** for language gotchas.
+1. Load **`gomboc_community_know_language_guidance`**.
+2. Explore AST with **`gomboc_community_cap_orl_walk`**.
+3. Write `<name>.orl`:
+   - First line: `# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json`
+   - `spec.template.audit_language: ast`
+   - Filter-only captures use `_` prefix; use `flags.indent` (no hardcoded spaces)
+4. Write `test.orl` with negative/positive cases; when expected fixtures exist use `remediated_workspace.mode: ast` (never `comparison: ast`).
+5. Prefer templates under `assets/templates/` when available.
 
 ## Constraints
 

@@ -45,6 +45,18 @@ MATCH_COUNT: <n or unknown>
 ORL_RULES_PULL_RESULT_END
 ```
 
+## Query language
+
+The `--search` flag uses prefix (Polish) notation:
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `(eq $.field "value")` | Exact equality | `(eq $.metadata.language "terraform")` |
+| `(any "value" $.field)` | Deep search in field | `(any "CIS" $.classification)` |
+| `(contains "value" $.field)` | String/array contains | `(contains "security" $.tags)` |
+| `(matches "/regex/" $.field)` | Regex match | `(matches "/aws_s3/" $.name)` |
+| `(and expr1 expr2 ...)` | All must be true | `(and (any "CIS" $.classification) ...)` |
+
 ## Constraints
 
 - Never log the token.

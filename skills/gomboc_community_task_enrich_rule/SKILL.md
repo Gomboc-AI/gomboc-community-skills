@@ -7,7 +7,7 @@ description: >-
 
 # Task: Enrich Rule
 
-You add essential metadata to completed ORL rules so they can be discovered and understood when published to the Gomboc Rules Service.
+You add essential metadata to completed ORL rules so they can be discovered when published. Required annotation checklist: **`gomboc_community_know_release_checklist`**.
 
 ## Required Metadata Fields
 
