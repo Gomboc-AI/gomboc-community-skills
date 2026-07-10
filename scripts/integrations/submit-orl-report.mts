@@ -334,14 +334,31 @@ function changedFilePaths(report: OrlReport): string[] {
   return [...files];
 }
 
+// Strip git-specific preamble lines (diff --git, index, mode) that most unified-diff
+// parsers don't handle, leaving only the standard --- / +++ / @@ portion.
+function stripGitPreamble(diff: string): string {
+  return diff
+    .split('\n')
+    .filter(l =>
+      !l.startsWith('diff --git ') &&
+      !l.startsWith('index ') &&
+      !l.startsWith('new file mode') &&
+      !l.startsWith('deleted file mode') &&
+      !l.startsWith('old mode') &&
+      !l.startsWith('new mode'),
+    )
+    .join('\n')
+    .trim();
+}
+
 function collectGitDiffs(workspace: string, files: string[]): Record<string, string> | undefined {
   const diffs: Record<string, string> = {};
   for (const file of files) {
     try {
-      const diff = execFileSync('git', ['diff', 'HEAD', '--', file], {
+      const raw = execFileSync('git', ['diff', 'HEAD', '--', file], {
         cwd: workspace, encoding: 'utf8', maxBuffer: 50 * 1024 * 1024,
       }).trim();
-      if (diff) diffs[file] = diff;
+      if (raw) diffs[file] = stripGitPreamble(raw);
     } catch { /* git unavailable or no diff */ }
   }
   return Object.keys(diffs).length > 0 ? diffs : undefined;
