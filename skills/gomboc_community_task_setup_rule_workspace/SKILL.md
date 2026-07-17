@@ -11,7 +11,7 @@ description: >-
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `package_path` | yes | Destination directory for the rule package |
+| `package_path` | yes | Destination directory for the rule package. Callers derive a default (e.g. `./rules/<rule-name>/` or `.orl-fixes/<rule-name>/`) rather than asking the user. |
 | `language` | yes | ORL language id |
 | `fixtures` | yes | Before/after samples (from planner or real code) |
 

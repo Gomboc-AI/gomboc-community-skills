@@ -22,6 +22,8 @@ Orchestrate creation of a tested ORL rule package. Language/AST details live in 
 
 ### 1 — Setup workspace
 
+Default `package_path` to `./rules/<rule-name>/` (cwd-relative), where `<rule-name>` is the rule's `metadata.name` with `/` replaced by `-` (e.g. `gomboc-ai/terraform/aws/rds-deletion-protection` → `./rules/gomboc-ai-terraform-aws-rds-deletion-protection/`). Do not ask the user for a directory — only use a different path if the user already gave one.
+
 Execute **`gomboc_community_task_setup_rule_workspace`** (fixtures from plan or real code). No comments in workspace files.
 
 ### 2 — Explore AST
