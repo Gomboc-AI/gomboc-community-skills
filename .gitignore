@@ -2,3 +2,6 @@
 
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
+
+# macOS
+.DS_Store

@@ -1,0 +1,22 @@
+{
+  "name": "gomboc-community-integrations",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Submits orl remediation reports from gomboc-community-skills to the Gomboc Integrations service via @gomboc-ai/gomboc-node-sdk.",
+  "bin": {
+    "submit-orl-report": "./submit-orl-report.mjs"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@gomboc-ai/gomboc-node-sdk": "^2.2.2",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0"
+  }
+}
