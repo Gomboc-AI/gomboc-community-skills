@@ -65,11 +65,13 @@ Be transparent with the user about what cannot be converted:
 | Cross-resource references (e.g., "security group must reference this VPC") | Audit-only | Cannot validate computed references from source |
 | Computed values (`count.index`, `each.key`) | Skip these | Variables/expressions should not be modified |
 | `print()` statements | Omit | Sentinel debugging, no ORL equivalent |
+| `find_resources_being_destroyed()` / `filter_attribute_was_value(...)` — blocks a *destroy* plan when an attribute *was* a given value | No direct equivalent | ORL cannot see destroy actions or prior state. Do not invent a substitute mechanism (e.g. `lifecycle.prevent_destroy`) the policy never references — instead convert the referenced attribute itself into a straightforward fix rule (e.g. `deletion_protection` must be `true`), and note in Limitations that the destroy-time enforcement itself isn't reproducible. |
 
-When a Sentinel check cannot be converted, explain why and suggest the closest ORL alternative (usually audit-only).
+When a Sentinel check cannot be converted, explain why and suggest the closest ORL alternative (usually audit-only). The closest alternative is the attribute the policy actually inspects — never substitute a different, unreferenced Terraform mechanism just because it achieves a similar-sounding outcome.
 
 ## Constraints
 
 - Prefer source-level patterns developers actually write.
 - Decompose multi-condition Sentinel policies into multiple ORL rules when needed.
+- Convert the attribute(s) the Sentinel policy actually reads — never re-target a different attribute or mechanism (e.g. swapping in `lifecycle.prevent_destroy` for a `deletion_protection` check) even if it seems like a plausible-sounding proxy.
 - Load **`gomboc_community_flow_convert_sentinel`** for the full pipeline.
