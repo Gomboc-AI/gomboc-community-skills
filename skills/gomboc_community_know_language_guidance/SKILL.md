@@ -1,204 +1,41 @@
 ---
-name: build-rule
-description: Build an ORL rule by creating workspace files, writing the rule using tree-sitter AST queries, and testing it. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python with embedded language expertise.
+name: gomboc_community_know_language_guidance
+description: >-
+  Use when you need language-specific ORL authoring gotchas for Terraform, HCL,
+  CloudFormation, Bicep, Dockerfile, Kubernetes, or Python. No side effects. Depends on:
+  gomboc_community_know_orl_runtime_resolution.
 ---
 
-# Build an ORL Rule
+# Know: Language Guidance
 
-You are an expert ORL rule builder. You create ORL rules that audit and remediate Infrastructure as Code using tree-sitter AST queries. Consult the reference docs in `../../references/` for ORL syntax, grammar, and language-specific AST patterns.
+Load this when writing or reviewing ORL rules. Prefer `references/` in this repo for full AST patterns and grammar.
 
-## ORL via Docker
+## Supported languages
 
-ORL is distributed as a Docker image. All `orl` commands MUST be run via Docker, mounting the current working directory into `/workspace`:
+| Language | ORL ID | Notes |
+|----------|--------|-------|
+| Terraform | `terraform` | Booleans unquoted; `count`/`for_each`; dynamic blocks; `var.` refs |
+| HCL / Terragrunt | `hcl` | `include`, `dependency`, `inputs`; string templates |
+| CloudFormation YAML | `cloudformation-yaml` | Many boolean spellings; `!Ref` vs `Ref:`; `AWS::NoValue` |
+| CloudFormation JSON | `cloudformation-json` | JSON booleans; no YAML aliases |
+| Bicep | `bicep` | Ternaries; `existing`; single-quoted strings |
+| Dockerfile | `docker` | Multi-stage `FROM`; shell vs exec form |
+| Kubernetes | `kubernetes` | Multi-doc YAML; Pod vs container `securityContext` |
+| Python | `python` | `True`/`False`/`None`; kwargs; CDK/Pulumi constructs |
 
-```bash
-docker run -v "${PWD}:/workspace" gombocai/orl <command> [args...]
-```
+## Language detection (extensions)
 
-Throughout this skill, every `orl` command shown follows this pattern.
-
-## Key References
-
-- **ORL quick reference**: `../../references/orl-docs.md`
-- **ORL grammar**: `../../references/grammar.md`
-- **Expression language**: `../../references/expr-lang.md`
-- **Terraform AST helpers**: `../../references/hcl-ast.md`
-- **CloudFormation YAML AST**: `../../references/yaml-ast.md`
-- **Bicep AST**: `../../references/bicep-ast.md`
-- **Examples**: `../../references/examples/{terraform,cloudformation,bicep}/`
-
-## Development Process
-
-### 1. Create Workspace Files
-
-Create the rule directory with test files:
-
-```
-my-rule/
-├── workspace/          # IaC files WITH violations
-├── workspace_expected/ # IaC files AFTER remediation
-├── my-rule.orl         # The rule (written in step 3)
-└── test.orl            # Test definition (written in step 4)
-```
-
-**Important**: NO COMMENTS in workspace files. Comments break diff-based testing.
-
-### 2. Explore the AST
-
-Use the ORL `walk` command to visualize the AST structure of your workspace files. Run from the rule directory:
-
-```bash
-docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language terraform ./workspace
-docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language cloudformation-yaml ./workspace
-docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language bicep ./workspace
-```
-
-This shows the exact tree-sitter node types and structure you need to match in your audit query.
-
-### 3. Write the ORL Rule
-
-Use the rule template from `../../assets/templates/`. A rule has this structure:
-
-```yaml
-# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
----
-type: Ruleset
-version: v1
-metadata:
-  name: gomboc-ai/<language>/<framework>/<rule-slug>
-  display_name: "<Human-readable rule title>"
-  description: |
-    ## Description
-
-    <Full markdown description>
-  annotations:
-    contributed-by: gomboc-ai
-    gomboc-ai/visibility: public
-    gomboc-ai/public-rule-bodies: "true"
-    gomboc-ai/provider: <PROVIDER>
-    gomboc-ai/resource: <RESOURCE_TYPE>
-    gomboc-ai/language: <terraform|python|cloudformation-yaml|bicep|kubernetes|...>
-    gomboc-ai/source: <checkov|guardrail|known_universe|owasp|mitre|...>
-    gomboc-ai/reviewer/name: <reviewer email or "gomboc-ai">
-    gomboc-ai/reviewer/date: "<YYYY-MM-DD>"
-    gomboc-ai/reviewer/status: pending      # always pending at build time
-    gomboc-ai/description-plain: "<one sentence>"
-    gomboc-ai/example: |-
-      ```diff
-      # Before / After example
-      ```
-    gomboc-ai/impact/score: <high|medium|low>
-    gomboc-ai/impact/statement-plain: "<one sentence>"
-    gomboc-ai/impact/statement: |
-      ## Impact
-      <markdown>
-    gomboc-ai/risk/score: <high|medium|low>
-    gomboc-ai/risk/statement-plain: "<one sentence>"
-    gomboc-ai/risk/statement: |
-      ## Risk
-      <markdown>
-    gomboc-ai/severity/score: <critical|high|medium|low>
-    gomboc-ai/severity/statement-plain: "<one sentence>"
-    gomboc-ai/severity/statement: |
-      ## Severity
-      <markdown>
-    gomboc-ai/limitations/application: |
-      This rule does NOT detect:
-      - Variable references (var.*, local.*, module.*)
-      - Dynamic blocks or conditional expressions
-      <add language-specific gaps>
-  priority: 1500000
-  classifications:
-    - gomboc-ai/policy/...
-spec:
-  template:
-    language: terraform  # or cloudformation-yaml, bicep, kubernetes, python, ...
-    audit_language: ast  # REQUIRED — always present, always "ast"
-  rules:
-    - name: descriptive-rule-name
-      audit: |
-        <tree-sitter query>
-      remediation:
-        - command: replace|insert_after|insert_before|remove|audit
-          path: <capture-name>
-          value: "<new value>"
-```
-
-**Required header:** The very first line of every `.orl` file MUST be:
-```
-# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json
-```
-followed by `---` on the second line.
-
-**`spec.template.audit_language: ast` is always required** and must always be `ast`.
-Omitting it causes the rule to fail `orl walk rulespace` (the production CI gate).
-
-**Annotations are not optional:** The full set of metadata annotations above is
-required for all rules that will be released. Rules missing impact/risk/severity
-statements, `gomboc-ai/limitations/application`, or `gomboc-ai/example` will be
-flagged during review and cannot be marked `valid`.
-
-### 4. Write the Test File
-
-```yaml
-type: Test
-version: v1
-metadata:
-  name: my-rule-test
-  priority: 1
-spec:
-  rulespace: "."
-  cases:
-    - name: Descriptive Test Name
-      language: terraform
-      workspace:
-        path: ./workspace
-      remediated_workspace:
-        path: ./workspace_expected
-        mode: ast        # REQUIRED when workspace_expected is present
-      expected_report:
-        errors: []
-        error_count: 0
-        findings: <N>
-```
-
-**Critical**: `mode: ast` is the correct key under `remediated_workspace`. NEVER use
-`comparison: ast` — that key does not exist and is silently ignored. If the rule is
-AUDIT_ONLY (no workspace_expected), omit the `remediated_workspace` block entirely.
-
-### 5. Test and Debug
-
-Run from the rule directory:
-
-```bash
-# Run tests
-docker run -v "${PWD}:/workspace" gombocai/orl test .
-
-# Dry-run remediation to see actual output
-docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language terraform -r . ./workspace
-```
-
-If tests fail, compare actual vs expected output and adjust the rule or expected files.
-
-### 6. Check available template functions
-
-```bash
-docker run gombocai/orl language terraform
-docker run gombocai/orl language cloudformation-yaml
-docker run gombocai/orl language bicep
-```
-
-## Critical Best Practices
-
-1. **AST, not text**: Use tree-sitter structure queries, never bare `hasSubString` for detecting properties
-2. **Underscore prefix for filters**: Captures used only for filtering MUST start with `_` (e.g., `@_type`). Only captures used in remediation should be non-underscore
-3. **Use `indent` flag**: Never hardcode spaces in `value`. Use `flags: { indent: "  " }` instead
-4. **YAML block scalars**: Use `|` (literal block) for code injection, not `|-` or quotes
-5. **One rule per pattern**: Separate rules for "wrong value" vs "missing attribute"
-6. **Test.orl must use `mode: ast`** if applicable — NOT `comparison: ast`
-7. **No comments in workspace files**: They break diff-based testing
-8. **Sequential replace + insert_after**: These may conflict on the same node. Combine into a single `replace` if needed
-9. **Capture broadly, filter with predicates**: Match wide, then use `#eq?`, `#not-eq?`, `#match?` to narrow
+| File Extension(s) | ORL Language ID |
+|---|---|
+| `.tf` | `terraform` |
+| `.hcl` (Terragrunt patterns) | `hcl` |
+| `.hcl` (terraform/provider blocks) | `terraform` |
+| `.yaml`/`.yml` with CFN signals | `cloudformation-yaml` |
+| `.json` with `AWSTemplateFormatVersion` | `cloudformation-json` |
+| `.bicep` | `bicep` |
+| `Dockerfile` / `Dockerfile.*` | `docker` |
+| `.yaml`/`.yml` with `apiVersion`+`kind` | `kubernetes` |
+| `.py` | `python` |
 
 ## Terraform-Specific Guidance
 
@@ -453,29 +290,8 @@ audit: |
   (#match? @_var "(?i)password|secret|api_key|token|credential")
 ```
 
-## Pre-Completion Checklist
+## Authoring tips
 
-Before declaring the rule complete:
-
-**Functional:**
-- [ ] `docker run -v "${PWD}:/workspace" gombocai/orl test .` passes with zero failures
-- [ ] Every test case from the plan has a corresponding workspace file
-- [ ] Workspace files have NO comments
-- [ ] All filter-only captures use underscore prefix (`@_name`)
-- [ ] `indent` flag used instead of hardcoded spaces in values
-- [ ] Rule handles both "wrong value" and "missing attribute" cases (if applicable)
-
-**Metadata (required for release):**
-- [ ] First line is `# yaml-language-server: $schema=/app/orl-rules/schema/ruleset.json`
-- [ ] `spec.template.audit_language: ast` is present
-- [ ] `metadata.priority` is set (1500000 for guardrails, adjust for other contexts)
-- [ ] All 6 impact/risk/severity fields are populated (score + statement + statement-plain for each)
-- [ ] `gomboc-ai/limitations/application` describes what the rule does NOT detect
-- [ ] `gomboc-ai/example` contains a diff block showing the before/after
-- [ ] `gomboc-ai/reviewer/status: pending` is set (never `valid` at build time)
-- [ ] `gomboc-ai/source` is set to the appropriate value (`checkov`, `guardrail`, `owasp`, etc.)
-
-**Test format:**
-- [ ] `test.orl` uses `type: Test` (NOT `type: RulesetTest`)
-- [ ] `remediated_workspace` uses `mode: ast` (NOT `comparison: ast`)
-- [ ] `expected_report` includes `error_count: 0` alongside `findings: N`
+- Explore AST with **`gomboc_community_cap_orl_walk`** before writing queries.
+- Keep remediation values deterministic for `FULL_REMEDIATION`; use `AUDIT_ONLY` when the correct value is user-specific.
+- See `references/` for grammar and additional examples.

@@ -2,6 +2,8 @@
 
 A Claude Code plugin for scanning, fixing, and creating ORL (Open Remediation Language) rules across Infrastructure as Code, containers, orchestration, and application code. Supports Terraform, HCL/Terragrunt, CloudFormation (YAML + JSON), Bicep, Dockerfile, Kubernetes, and Python.
 
+**Contributor guide:** see [AGENT_DEV.md](./AGENT_DEV.md) for the `gomboc_community_*` skill architecture (flow / task / cap / know), registration, and maintenance conventions.
+
 ## Prerequisites
 
 - [Claude Code](https://claude.com/claude-code) CLI installed
@@ -61,7 +63,7 @@ Scan source code for security anti-patterns and compliance gaps using the ORL cl
 /gomboc-community:fix . — CIS compliance check
 ```
 
-**Workflow:** diagnose → select issues → apply fixes → optionally save as rules
+**Workflow:** `gomboc_community_flow_fix` → diagnose → apply fixes → optionally enrich / release
 
 ### `/create-rule` — Create a Rule from Scratch
 
@@ -73,19 +75,60 @@ Define a security or compliance policy and build a complete ORL rule package wit
 /gomboc-community:create-rule Ensure Kubernetes Deployments set runAsNonRoot in securityContext
 ```
 
-**Workflow:** plan → build → add metadata → optionally push
+**Workflow:** `gomboc_community_flow_create_rule` → plan → build → review → enrich → optionally release
+
+### `/convert-sentinel` — Convert Sentinel to ORL
+
+Convert a HashiCorp Sentinel policy into one or more tested ORL rules.
+
+**Workflow:** `gomboc_community_flow_convert_sentinel`
 
 ## Skills
 
+Skills use the layered `gomboc_community_*` naming (flow / task / cap / know). See [AGENT_DEV.md](./AGENT_DEV.md).
+
+### Flows
+
 | Skill | Description |
 |-------|-------------|
-| `diagnose` | Classification-driven analyzer — detects language, loads matching policies, walks the AST, reports prioritized findings |
-| `apply-fix` | Applies a fix using an existing ORL rule or generates a new one, with optional save-as-rule |
-| `plan-rule` | Analyze requirements, identify test cases, and create a plan for an ORL rule |
-| `build-rule` | Create workspace files, write the ORL rule, and test it |
-| `add-metadata` | Add basic metadata (name, description, classifications, provider) to a rule |
-| `push-rule` | Push a completed rule to the Gomboc Rules Service |
-| `cleanup-rule` | Evaluate a rule package against release standards and produce a detailed remediation checklist |
+| `gomboc_community_flow_fix` | `/fix` orchestrator — diagnose → apply → optional save |
+| `gomboc_community_flow_create_rule` | `/create-rule` orchestrator — plan → build → review → enrich → release |
+| `gomboc_community_flow_diagnose` | Classification-driven analyzer and rule-coverage report |
+| `gomboc_community_flow_apply_fix` | Apply via existing rule or generate a new one |
+| `gomboc_community_flow_build_rule` | Create workspace, write ORL rule, test |
+| `gomboc_community_flow_review_rule` | Pre-release compliance fix and report |
+| `gomboc_community_flow_convert_sentinel` | Sentinel → ORL conversion pipeline |
+
+### Tasks
+
+| Skill | Description |
+|-------|-------------|
+| `gomboc_community_task_orl_planner` | Plan requirements, remediability, and test cases |
+| `gomboc_community_task_enrich_rule` | Add community metadata for publishing |
+| `gomboc_community_task_release_rule` | Validate and push to the Rules Service |
+| `gomboc_community_task_resolve_existing_rules` | Local-first → cache → `orl rules pull` |
+| `gomboc_community_task_setup_rule_workspace` | Create package dirs and fixtures |
+| `gomboc_community_task_write_orl_rule` | Author `.orl` and `test.orl` |
+| `gomboc_community_task_run_orl_test_loop` | Test and iterate until pass |
+
+### Caps
+
+| Skill | Description |
+|-------|-------------|
+| `gomboc_community_cap_run_orl_test` | `orl test .` via Docker |
+| `gomboc_community_cap_orl_remediate` | `orl remediate` (dry-run default) |
+| `gomboc_community_cap_orl_walk` | `orl walk` AST explore |
+| `gomboc_community_cap_orl_rules_pull` | `orl rules pull` (`--search` / `--channel`) |
+| `gomboc_community_cap_orl_rules_push` | `orl rules push` |
+
+### Know
+
+| Skill | Description |
+|-------|-------------|
+| `gomboc_community_know_orl_runtime_resolution` | Docker `gombocai/orl` invocation |
+| `gomboc_community_know_language_guidance` | Per-language authoring notes |
+| `gomboc_community_know_sentinel_conversion` | Sentinel vs ORL paradigm |
+| `gomboc_community_know_release_checklist` | Release-readiness criteria |
 
 ## Supported Languages
 
@@ -116,7 +159,7 @@ Adding new classification YAMLs automatically extends what `/fix` can detect —
 To push rules to your Gomboc Community Edition account:
 
 1. Set your Personal Access Token: `export RULE_SERVICE_TOKEN=your-pat-here`
-2. Run `/gomboc-community:push-rule` from your rule directory
+2. Run `/gomboc-community:create-rule` (or release after `/fix` save) so **`gomboc_community_task_release_rule`** runs
 
 ## Rule Package Structure
 

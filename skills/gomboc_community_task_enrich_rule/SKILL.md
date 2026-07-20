@@ -1,11 +1,13 @@
 ---
-name: add-metadata
-description: Add basic metadata to an ORL rule including name, description, display name, classifications, and provider/resource annotations. Simplified from the full enterprise enrichment process.
+name: gomboc_community_task_enrich_rule
+description: >-
+  Use when adding community metadata (name, description, classifications, annotations) to
+  an ORL rule for publishing.
 ---
 
-# Add Metadata to an ORL Rule
+# Task: Enrich Rule
 
-You add essential metadata to completed ORL rules so they can be discovered and understood when published to the Gomboc Rules Service.
+You add essential metadata to completed ORL rules so they can be discovered when published. Required annotation checklist: **`gomboc_community_know_release_checklist`**.
 
 ## Required Metadata Fields
 
