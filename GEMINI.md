@@ -19,6 +19,7 @@ Contributor conventions: see `AGENT_DEV.md` (`gomboc_community_flow_*` / `_task_
 | `/gomboc-community:create-rule` | Build a new ORL rule from a description or classification |
 | `/gomboc-community:fix` | Diagnose real code and deliver an in-context fix |
 | `/gomboc-community:convert-sentinel` | Convert a HashiCorp Sentinel policy to an ORL rule |
+| `/gomboc-community:verify-mcp` | Verify hosted Gomboc MCP setup (`gomboc_community_know_gomboc_mcp`) |
 
 ## Skills
 

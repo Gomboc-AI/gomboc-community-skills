@@ -2,6 +2,11 @@
 
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
+.cursor/mcp.json
+
+# Sensitive Info
+.env
+.env*
 
 # macOS
 .DS_Store

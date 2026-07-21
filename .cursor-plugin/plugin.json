@@ -1,6 +1,6 @@
 {
   "name": "gomboc-community",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Scan, fix, and create ORL rules for Terraform, HCL, CloudFormation, Bicep, Dockerfile, Kubernetes, and Python.",
   "author": {
     "name": "Gomboc AI",
@@ -37,6 +37,7 @@
     "./skills/gomboc_community_flow_diagnose/",
     "./skills/gomboc_community_flow_fix/",
     "./skills/gomboc_community_flow_review_rule/",
+    "./skills/gomboc_community_know_gomboc_mcp/",
     "./skills/gomboc_community_know_language_guidance/",
     "./skills/gomboc_community_know_orl_runtime_resolution/",
     "./skills/gomboc_community_know_release_checklist/",

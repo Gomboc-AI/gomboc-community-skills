@@ -2,13 +2,18 @@
 name: gomboc_community_cap_orl_rules_pull
 description: >-
   Use when pulling rules from the Gomboc Rules Service with `orl rules pull` (--search
-  and/or --channel). Search via orl is a pull. Depends on:
+  and/or --channel). Search via orl is a pull. Prefer MCP channel/rule lookup first when
+  available. Depends on: gomboc_community_know_gomboc_mcp,
   gomboc_community_know_orl_runtime_resolution.
 ---
 
 # Capability: ORL Rules Pull
 
 There is no `orl rules search`. Matching remote rules uses `rules pull` with `--search` and/or `--channel`, which **downloads** rule packages.
+
+## Prefer MCP
+
+Before pulling, follow **`gomboc_community_know_gomboc_mcp`**: if MCP is available, try `get_channels` / `get_rules` to refine channel/name. If the MCP payload is enough and no download is needed, skip Docker. Otherwise run the pull below.
 
 ## Inputs
 

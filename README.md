@@ -83,6 +83,16 @@ Convert a HashiCorp Sentinel policy into one or more tested ORL rules.
 
 **Workflow:** `gomboc_community_flow_convert_sentinel`
 
+### `/verify-mcp` — Verify Hosted Gomboc MCP
+
+Confirm the hosted Gomboc MCP server is configured and working (server ready + `get_channels` smoke call).
+
+```
+/gomboc-community:verify-mcp
+```
+
+**Skill:** `gomboc_community_know_gomboc_mcp` — setup, prefer-MCP vs Docker/`orl` fallback, soft capability map.
+
 ## Skills
 
 Skills use the layered `gomboc_community_*` naming (flow / task / cap / know). See [AGENT_DEV.md](./AGENT_DEV.md).
@@ -106,7 +116,7 @@ Skills use the layered `gomboc_community_*` naming (flow / task / cap / know). S
 | `gomboc_community_task_orl_planner` | Plan requirements, remediability, and test cases |
 | `gomboc_community_task_enrich_rule` | Add community metadata for publishing |
 | `gomboc_community_task_release_rule` | Validate and push to the Rules Service |
-| `gomboc_community_task_resolve_existing_rules` | Local-first → cache → `orl rules pull` |
+| `gomboc_community_task_resolve_existing_rules` | Local-first → cache → MCP lookup → `orl rules pull` |
 | `gomboc_community_task_setup_rule_workspace` | Create package dirs and fixtures |
 | `gomboc_community_task_write_orl_rule` | Author `.orl` and `test.orl` |
 | `gomboc_community_task_run_orl_test_loop` | Test and iterate until pass |
@@ -125,6 +135,7 @@ Skills use the layered `gomboc_community_*` naming (flow / task / cap / know). S
 
 | Skill | Description |
 |-------|-------------|
+| `gomboc_community_know_gomboc_mcp` | Hosted MCP setup, prefer-MCP vs Docker/`orl`, soft tool map |
 | `gomboc_community_know_orl_runtime_resolution` | Docker `gombocai/orl` invocation |
 | `gomboc_community_know_language_guidance` | Per-language authoring notes |
 | `gomboc_community_know_sentinel_conversion` | Sentinel vs ORL paradigm |
