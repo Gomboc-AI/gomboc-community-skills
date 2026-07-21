@@ -8,5 +8,8 @@
 .env
 .env*
 
+# Local Gomboc cache / pulled rules
+.gomboc
+
 # macOS
 .DS_Store

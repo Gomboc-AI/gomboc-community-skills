@@ -13,7 +13,12 @@ There is no `orl rules search`. Matching remote rules uses `rules pull` with `--
 
 ## Prefer MCP
 
-Before pulling, follow **`gomboc_community_know_gomboc_mcp`**: if MCP is available, try `get_channels` / `get_rules` to refine channel/name. If the MCP payload is enough and no download is needed, skip Docker. Otherwise run the pull below.
+Follow **`gomboc_community_know_gomboc_mcp`** (including **Pagination**):
+
+1. If refining by channel, call `get_channels` (metadata/query only).
+2. **Channel pull** — call `get_channels_rules` with the channel `name`. **Paginate** with `page` / `perPage` until all `total` rules are fetched. When an item includes `body`, write it into `out_dir` as the local package / `.orl` and **skip Docker for that rule**. If an item omits `body`, call `get_rules` for that name before falling back.
+3. **Search / known names** — for a search intent, prefer `search_rules` (**paginate** fully), then `get_rules` for any hit missing `body`. For each known rule **name**, call `get_rules` — the response includes the rule **`body`**. Write into `out_dir` and **skip Docker for that rule**.
+4. Use Docker `orl rules pull` below **only** when MCP is unavailable, list/search/`get_rules` fails, or bodies are still missing **after full pagination** (and any `get_rules` follow-ups). Do **not** fall back because the channel/search result set is large or only the first page was retrieved.
 
 ## Inputs
 

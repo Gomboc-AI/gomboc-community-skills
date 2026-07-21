@@ -22,7 +22,7 @@ Scan source files, match ORL classification policies, and report prioritized fin
 
 ### Step 2 — Load matching classifications
 
-1. Prefer MCP `get_classifications` when available (see **`gomboc_community_know_gomboc_mcp`**). If the response is enough, use it.
+1. Prefer MCP classification lookup per **`gomboc_community_know_gomboc_mcp`**: `get_classifications` for a known name, or `search_classifications` with **full pagination** (`page` / `perPage`) when browsing. If the (fully paginated) response is enough, use it.
 2. Otherwise read classification references under `references/` (e.g. `references/examples/classifications.txt`).
 3. Filter by `gomboc-ai/iac` languages intersecting detected languages.
 4. Optionally filter by user concern keywords and/or compliance framework (`gomboc-ai/framework`).

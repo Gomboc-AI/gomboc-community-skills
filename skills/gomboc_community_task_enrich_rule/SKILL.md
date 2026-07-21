@@ -54,7 +54,7 @@ metadata:
 
 ### `classifications`
 - At least one `gomboc-ai/policy/*` classification is required
-- Prefer MCP `get_classifications` when available; otherwise search `../../references/classifications.txt`
+- Prefer MCP: `get_classifications` by exact name, or `search_classifications` when browsing (**paginate** per **`gomboc_community_know_gomboc_mcp`**); otherwise search `../../references/classifications.txt`
 - Common categories:
   - `gomboc-ai/policy/encryption/encryption_at_rest/...`
   - `gomboc-ai/policy/encryption/encryption_in_transit/...`
@@ -77,7 +77,7 @@ metadata:
 
 1. **Read the rule file** to understand what it audits and remediates
 2. **Determine provider and resource** from the audit query
-3. **Search classifications** — prefer MCP `get_classifications`; fall back to grepping `../../references/classifications.txt`
+3. **Search classifications** — prefer MCP `get_classifications` (known name) or paginated `search_classifications` (browse/query) per **`gomboc_community_know_gomboc_mcp`**; fall back to grepping `../../references/classifications.txt`
 4. **Generate metadata** following the field guidelines above
 5. **Update the rule file** with the metadata in the `metadata:` section
 6. **Validate** the rule file is still valid YAML (no syntax errors)

@@ -9,7 +9,7 @@ description: >-
 
 # Task: Resolve Existing Rules
 
-Remote discovery via `orl` is a **pull** (`orl rules pull --search`). There is no search-only `orl` command. Prefer hosted MCP lookup first per **`gomboc_community_know_gomboc_mcp`**.
+Remote discovery via `orl` is a **pull** (`orl rules pull --search`). There is no search-only `orl` command. Prefer hosted MCP lookup first per **`gomboc_community_know_gomboc_mcp`** (including **Pagination** for list/search tools).
 
 ## Inputs
 
@@ -25,8 +25,11 @@ Remote discovery via `orl` is a **pull** (`orl rules pull --search`). There is n
 
 1. **Local first** — if `/orl-rules/final/`, `.orl-rules/`, or `.orl-fixes/` exists, use `orl list_rules` / `rule_metadata` (via Docker per know skill) and match classification + language + resource.
 2. **Cache** — if `cache_dir` has fresh metadata (`metadata.json` within TTL), reuse pulled packages.
-3. **MCP lookup (prefer)** — if Gomboc MCP is available, try `get_rules` / `get_channels` / `get_classifications` per the soft map in **`gomboc_community_know_gomboc_mcp`**. If the response is enough to identify a match **and** a local package already exists (or is not required yet), use it. If a package path is still required, continue to pull.
-4. **Pull** — invoke **`gomboc_community_cap_orl_rules_pull`** with a compound `--search` query into `cache_dir`; refresh cache metadata.
+3. **MCP fetch (prefer)** — if Gomboc MCP is available:
+   - If a rule **name** is known, call `get_rules` per **`gomboc_community_know_gomboc_mcp`**. When `data.body` is present, write under `cache_dir` and treat as resolved (`SOURCE: mcp`).
+   - If names are unknown, prefer `search_rules` and/or `get_channels_rules` — **paginate fully** (`page` / `perPage`) before concluding MCP cannot help. Materialize hits that include `body`; call `get_rules` for names missing `body`. Use `get_channels` / `get_classifications` / `search_classifications` (paginated) only to refine names/queries.
+   - If MCP is still insufficient after full pagination and follow-up `get_rules`, continue to pull.
+4. **Pull** — invoke **`gomboc_community_cap_orl_rules_pull`** with a compound `--search` query into `cache_dir`; refresh cache metadata (Docker only when MCP cannot supply bodies after the steps above).
 5. **Report** match quality: existing / partial / none.
 
 ## Output
