@@ -27,13 +27,15 @@ Follow **`gomboc_community_know_gomboc_mcp`** (including **Pagination**):
 | `out_dir` | yes | Host directory for pulled rules (`-o`) |
 | `search` | no | Prefix-notation query for `--search` |
 | `channel` | no | Channel name for `--channel` |
-| `token_env` | no | Default `RULE_SERVICE_TOKEN` |
+
+Auth: resolve host token per **`gomboc_community_know_orl_runtime_resolution`** (`GOMBOC_PAT`, else legacy `RULE_SERVICE_TOKEN` with warning).
 
 ## Execution
 
 ```bash
+# TOKEN resolved per know_orl_runtime_resolution (prefer GOMBOC_PAT)
 docker run --rm -v "${PWD}:/workspace" -w /workspace \
-  -e RULE_SERVICE_TOKEN \
+  -e RULE_SERVICE_TOKEN="${TOKEN}" \
   gombocai/orl rules pull -o "${OUT_DIR}" \
   --search '(and (any "<classification>" $.classification) (eq $.metadata.language "<lang>"))'
 ```
@@ -42,7 +44,7 @@ Or by channel:
 
 ```bash
 docker run --rm -v "${PWD}:/workspace" -w /workspace \
-  -e RULE_SERVICE_TOKEN \
+  -e RULE_SERVICE_TOKEN="${TOKEN}" \
   gombocai/orl rules pull -o "${OUT_DIR}" --channel default
 ```
 

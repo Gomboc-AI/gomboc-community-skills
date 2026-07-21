@@ -210,7 +210,7 @@ gomboc_community_task_orl_planner
 ### Artifacts
 
 - [ ] Outputs under workspace paths documented (e.g. `.orl-fixes/`, `.gomboc/` if used)
-- [ ] Token env vars (`RULE_SERVICE_TOKEN` / `GOMBOC_PAT`) never logged
+- [ ] Token env var (`GOMBOC_PAT`) never logged
 
 ---
 
@@ -303,4 +303,4 @@ When splitting orchestration:
 ### Prerequisites
 
 - Docker for `gombocai/orl` (see `gomboc_community_know_orl_runtime_resolution`)
-- `RULE_SERVICE_TOKEN` or `GOMBOC_PAT` for Rules Service pull/push
+- `GOMBOC_PAT` for Rules Service pull/push (map for `orl` per `gomboc_community_know_orl_runtime_resolution`)

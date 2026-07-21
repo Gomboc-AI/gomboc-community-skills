@@ -40,7 +40,7 @@ Skills activate automatically based on what you describe:
 ## Prerequisites
 
 - Docker with `gombocai/orl` (see `gomboc_community_know_orl_runtime_resolution`)
-- `GOMBOC_PAT` / `RULE_SERVICE_TOKEN` for Rules Service pull/push
+- `GOMBOC_PAT` for Rules Service pull/push (mapped to `orl` per `gomboc_community_know_orl_runtime_resolution`)
 
 ## ORL Rule Creation Workflow
 

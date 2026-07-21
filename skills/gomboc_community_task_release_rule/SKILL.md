@@ -13,7 +13,7 @@ Validate then publish a community ORL rule package to the Rules Service (private
 ## Prerequisites
 
 - Runtime per **`gomboc_community_know_orl_runtime_resolution`**
-- `RULE_SERVICE_TOKEN` (or `GOMBOC_PAT` mapped per that know skill) — never log the value
+- Host token resolved per that know skill (`GOMBOC_PAT`, else legacy `RULE_SERVICE_TOKEN` with warning) — never log the value
 
 ## Process
 

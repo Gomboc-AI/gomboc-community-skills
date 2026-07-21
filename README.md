@@ -27,10 +27,10 @@ docker run -v "${PWD}:/workspace" gombocai/orl walk workspace --language terrafo
 docker run -v "${PWD}:/workspace" gombocai/orl remediate -d --language terraform -r . ./workspace
 ```
 
-To push rules, pass your token via the `-e` flag:
+To push rules, set `GOMBOC_PAT` and map it for `orl` (see `gomboc_community_know_orl_runtime_resolution`):
 
 ```bash
-docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN gombocai/orl rules push .
+docker run -v "${PWD}:/workspace" -e RULE_SERVICE_TOKEN="${GOMBOC_PAT}" gombocai/orl rules push .
 ```
 
 ## Installation
@@ -169,7 +169,7 @@ Adding new classification YAMLs automatically extends what `/fix` can detect —
 
 To push rules to your Gomboc Community Edition account:
 
-1. Set your Personal Access Token: `export RULE_SERVICE_TOKEN=your-pat-here`
+1. Set your Personal Access Token: `export GOMBOC_PAT=your-pat-here`
 2. Run `/gomboc-community:create-rule` (or release after `/fix` save) so **`gomboc_community_task_release_rule`** runs
 
 ## Rule Package Structure
