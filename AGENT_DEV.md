@@ -210,7 +210,7 @@ gomboc_community_task_orl_planner
 ### Artifacts
 
 - [ ] Outputs under workspace paths documented (e.g. `.orl-fixes/`, `.gomboc/` if used)
-- [ ] Token env var (`GOMBOC_PAT`) never logged
+- [ ] Auth token env vars never logged (see `gomboc_community_know_orl_runtime_resolution` / integrations submitters)
 
 ---
 
@@ -303,4 +303,4 @@ When splitting orchestration:
 ### Prerequisites
 
 - Docker for `gombocai/orl` (see `gomboc_community_know_orl_runtime_resolution`)
-- `GOMBOC_PAT` for Rules Service pull/push (map for `orl` per `gomboc_community_know_orl_runtime_resolution`)
+- Auth token for Rules Service pull/push and integrations submit — prefer `GOMBOC_PAT`; undocumented legacy fallbacks (`RULE_SERVICE_TOKEN` for `orl`, `GOMBOC_ACCESS_TOKEN` / `GOMBOC_API_TOKEN` for report submit) are resolved in `gomboc_community_know_orl_runtime_resolution` and `scripts/integrations/submit-orl-report.*`
