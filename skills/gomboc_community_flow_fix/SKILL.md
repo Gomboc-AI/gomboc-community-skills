@@ -33,13 +33,15 @@ For each selected finding, execute **`gomboc_community_flow_apply_fix`**.
 
 Show results after each fix. Continue to the next selected finding when fixing multiple.
 
-### Phase 3 — Save (optional)
+### Phase 3 — Save / release (sole owner)
 
-For newly generated rules (apply Path B):
+For newly generated rules from Phase 2 (apply Path B packages under `.orl-fixes/`):
 
 1. Ask whether to save as reusable rules.
 2. If yes: **`gomboc_community_task_enrich_rule`**, then ask about push.
 3. If push: **`gomboc_community_task_release_rule`**.
+
+Do **not** rely on **`gomboc_community_flow_apply_fix`** for enrich/release — that flow applies fixes only.
 
 ## Constraints
 

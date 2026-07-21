@@ -10,8 +10,8 @@ Load and execute **`gomboc_community_flow_fix`**. That flow is canonical for orc
 ## Summary
 
 1. **`gomboc_community_flow_diagnose`** — scan and report findings; ask which to fix.
-2. **`gomboc_community_flow_apply_fix`** — existing rule or generate; dry-run; confirm; apply.
-3. Optional **`gomboc_community_task_enrich_rule`** / **`gomboc_community_task_release_rule`** for new rules.
+2. **`gomboc_community_flow_apply_fix`** — existing rule or generate; dry-run; confirm; apply (no enrich/release).
+3. **`gomboc_community_flow_fix` Phase 3** (sole owner) — optional **`gomboc_community_task_enrich_rule`** / **`gomboc_community_task_release_rule`** for new rules.
 
 Resolve ORL via **`gomboc_community_know_orl_runtime_resolution`**. Prefer caps for CLI.
 

@@ -1,17 +1,19 @@
 ---
 name: gomboc_community_flow_apply_fix
 description: >-
-  Use when applying a fix with an existing ORL rule or by generating a new one; optional
-  save/release. Depends on: gomboc_community_know_orl_runtime_resolution,
+  Use when applying a fix with an existing ORL rule or by generating a new one.
+  Does not own save/release — callers (e.g. flow_fix Phase 3) handle enrich and
+  push. Depends on: gomboc_community_know_orl_runtime_resolution,
   gomboc_community_know_language_guidance, gomboc_community_task_resolve_existing_rules,
   gomboc_community_cap_orl_remediate, gomboc_community_task_setup_rule_workspace,
-  gomboc_community_task_write_orl_rule, gomboc_community_task_run_orl_test_loop,
-  gomboc_community_task_enrich_rule, gomboc_community_task_release_rule.
+  gomboc_community_task_write_orl_rule, gomboc_community_task_run_orl_test_loop.
 ---
 
 # Flow: Apply Fix
 
 Apply a fix for a finding — reuse an existing rule or generate one. Do not inline Docker/`orl` commands; use the listed dependencies.
+
+**Does not** enrich or release rules. When a new package is generated under `.orl-fixes/`, leave it in place and return; save/release is owned by **`gomboc_community_flow_fix`** Phase 3 (or other explicit callers of enrich/release).
 
 ## Inputs
 
@@ -38,15 +40,10 @@ From **`gomboc_community_flow_diagnose`** (or the user):
 3. **`gomboc_community_task_write_orl_rule`** (uses **`gomboc_community_cap_orl_walk`**).
 4. **`gomboc_community_task_run_orl_test_loop`** (max 5 attempts).
 5. Dry-run then apply via **`gomboc_community_cap_orl_remediate`** against the user’s target path (confirm before apply).
-
-## Optional save / release
-
-Ask whether to save the generated package as a reusable rule.
-
-- Yes → **`gomboc_community_task_enrich_rule`** (pre-populate from the finding’s classification), then optionally **`gomboc_community_task_release_rule`**.
-- No → ask whether to keep or delete `.orl-fixes/<rule-name>/`.
+6. Report the package path under `.orl-fixes/` so the caller can optionally save/release.
 
 ## Constraints
 
 - Never apply without engineer confirmation.
 - Prefer caps/tasks over ad-hoc `docker run`.
+- Do not call **`gomboc_community_task_enrich_rule`** or **`gomboc_community_task_release_rule`** from this flow.

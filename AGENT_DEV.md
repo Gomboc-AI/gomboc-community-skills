@@ -164,8 +164,8 @@ Commands live in `commands/`:
 
 ```
 gomboc_community_flow_diagnose
-  → gomboc_community_flow_apply_fix
-  → (optional) gomboc_community_task_enrich_rule
+  → gomboc_community_flow_apply_fix          # fix only
+  → (optional) gomboc_community_task_enrich_rule   # flow_fix Phase 3 owns save/release
   → (optional) gomboc_community_task_release_rule
 ```
 
