@@ -31,4 +31,4 @@ description: >-
 ## Constraints
 
 - Do not push or enrich here.
-- Hand off to **`gomboc_community_task_run_orl_test_loop`** for validation.
+- Hand off to **`gomboc_community_task_run_orl_test_loop`** with `rule_package` = this task’s `package_path`.

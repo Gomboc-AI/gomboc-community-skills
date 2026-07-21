@@ -11,12 +11,12 @@ description: >-
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `package_path` | yes | Rule package directory |
+| `rule_package` | yes | Absolute path to the rule package directory (same name as **`gomboc_community_cap_run_orl_test`**) |
 | `max_attempts` | no | Default 5 |
 
 ## Process
 
-1. Invoke **`gomboc_community_cap_run_orl_test`** on `package_path`.
+1. Invoke **`gomboc_community_cap_run_orl_test`** with the same `rule_package`.
 2. On failure, inspect diffs/output, adjust rule or expected fixtures, retry.
 3. Optionally set `double_run: true` on a final passing run for idempotency.
 4. Stop after `max_attempts` and report remaining failures.
