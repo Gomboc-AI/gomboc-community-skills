@@ -11,5 +11,9 @@
 # Local Gomboc cache / pulled rules
 .gomboc
 
+# ORL remediate report (written by cap_orl_remediate)
+.orl-report.yaml
+.orl-report.submit.json
+
 # macOS
 .DS_Store
