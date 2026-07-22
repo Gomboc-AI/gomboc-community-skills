@@ -2,6 +2,18 @@
 
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
+.cursor/mcp.json
+
+# Sensitive Info
+.env
+.env*
+
+# Local Gomboc cache / pulled rules
+.gomboc
+
+# ORL remediate report (written by cap_orl_remediate)
+.orl-report.yaml
+.orl-report.submit.json
 
 # macOS
 .DS_Store

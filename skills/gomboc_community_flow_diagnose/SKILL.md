@@ -3,13 +3,14 @@ name: gomboc_community_flow_diagnose
 description: >-
   Use when scanning code for security/compliance issues — detect language, load policies,
   walk AST, report findings and rule coverage. Depends on:
-  gomboc_community_know_orl_runtime_resolution, gomboc_community_know_language_guidance,
-  gomboc_community_task_resolve_existing_rules, gomboc_community_cap_orl_walk.
+  gomboc_community_know_gomboc_mcp, gomboc_community_know_orl_runtime_resolution,
+  gomboc_community_know_language_guidance, gomboc_community_task_resolve_existing_rules,
+  gomboc_community_cap_orl_walk.
 ---
 
 # Flow: Diagnose
 
-Scan source files, match ORL classification policies, and report prioritized findings with rule coverage. Prefer dependencies over inlined Docker/`orl` commands.
+Scan source files, match ORL classification policies, and report prioritized findings with rule coverage. Prefer dependencies over inlined Docker/`orl` commands. Prefer hosted MCP for classification lookup per **`gomboc_community_know_gomboc_mcp`**.
 
 ## Process
 
@@ -21,9 +22,10 @@ Scan source files, match ORL classification policies, and report prioritized fin
 
 ### Step 2 — Load matching classifications
 
-1. Read classification references under `references/` (e.g. `references/examples/classifications.txt`).
-2. Filter by `gomboc-ai/iac` languages intersecting detected languages.
-3. Optionally filter by user concern keywords and/or compliance framework (`gomboc-ai/framework`).
+1. Prefer MCP classification lookup per **`gomboc_community_know_gomboc_mcp`**: `get_classifications` for a known name, or `search_classifications` with **full pagination** (`page` / `perPage`) when browsing. If the (fully paginated) response is enough, use it.
+2. Otherwise read classification references under `references/` (e.g. `references/classifications.txt`).
+3. Filter by `gomboc-ai/iac` languages intersecting detected languages.
+4. Optionally filter by user concern keywords and/or compliance framework (`gomboc-ai/framework`).
 
 ### Step 3 — Identify resources & structures
 
@@ -108,4 +110,4 @@ Fix which issues? [1,2,.../all]
 ## Constraints
 
 - Rule discovery/pull belongs in **`gomboc_community_task_resolve_existing_rules`** / **`gomboc_community_cap_orl_rules_pull`**.
-- Runtime via **`gomboc_community_know_orl_runtime_resolution`**.
+- Runtime via **`gomboc_community_know_orl_runtime_resolution`**; MCP prefer/fallback via **`gomboc_community_know_gomboc_mcp`**.

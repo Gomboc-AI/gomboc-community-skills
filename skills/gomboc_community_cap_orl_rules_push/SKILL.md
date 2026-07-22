@@ -12,14 +12,16 @@ description: >-
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `rule_package` | yes | Absolute path to the rule package |
-| `token_env` | no | Default `RULE_SERVICE_TOKEN` |
+
+Auth: resolve host token per **`gomboc_community_know_orl_runtime_resolution`** (`GOMBOC_PAT`, else legacy `RULE_SERVICE_TOKEN` with warning).
 
 ## Execution
 
 ```bash
 cd "${RULE_PACKAGE}"
+# TOKEN resolved per know_orl_runtime_resolution (prefer GOMBOC_PAT)
 docker run --rm -v "${PWD}:/workspace" -w /workspace \
-  -e RULE_SERVICE_TOKEN \
+  -e RULE_SERVICE_TOKEN="${TOKEN}" \
   gombocai/orl rules push .
 ```
 

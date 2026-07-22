@@ -2,12 +2,13 @@
 name: gomboc_community_task_enrich_rule
 description: >-
   Use when adding community metadata (name, description, classifications, annotations) to
-  an ORL rule for publishing.
+  an ORL rule for publishing. Prefer MCP classification lookup when available. Depends on:
+  gomboc_community_know_gomboc_mcp, gomboc_community_know_release_checklist.
 ---
 
 # Task: Enrich Rule
 
-You add essential metadata to completed ORL rules so they can be discovered when published. Required annotation checklist: **`gomboc_community_know_release_checklist`**.
+You add essential metadata to completed ORL rules so they can be discovered when published. Required annotation checklist: **`gomboc_community_know_release_checklist`**. Classification lookup: prefer MCP per **`gomboc_community_know_gomboc_mcp`**.
 
 ## Required Metadata Fields
 
@@ -53,7 +54,7 @@ metadata:
 
 ### `classifications`
 - At least one `gomboc-ai/policy/*` classification is required
-- Search `../../references/classifications.txt` for relevant classifications
+- Prefer MCP: `get_classifications` by exact name, or `search_classifications` when browsing (**paginate** per **`gomboc_community_know_gomboc_mcp`**); otherwise search `../../references/classifications.txt`
 - Common categories:
   - `gomboc-ai/policy/encryption/encryption_at_rest/...`
   - `gomboc-ai/policy/encryption/encryption_in_transit/...`
@@ -76,7 +77,7 @@ metadata:
 
 1. **Read the rule file** to understand what it audits and remediates
 2. **Determine provider and resource** from the audit query
-3. **Search classifications** by grepping `../../references/classifications.txt` for relevant keywords
+3. **Search classifications** — prefer MCP `get_classifications` (known name) or paginated `search_classifications` (browse/query) per **`gomboc_community_know_gomboc_mcp`**; fall back to grepping `../../references/classifications.txt`
 4. **Generate metadata** following the field guidelines above
 5. **Update the rule file** with the metadata in the `metadata:` section
 6. **Validate** the rule file is still valid YAML (no syntax errors)

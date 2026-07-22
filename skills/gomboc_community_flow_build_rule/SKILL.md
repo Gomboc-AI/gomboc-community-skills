@@ -40,7 +40,7 @@ Execute **`gomboc_community_task_write_orl_rule`**. Require:
 
 ### 4 — Test loop
 
-Execute **`gomboc_community_task_run_orl_test_loop`**. Optionally dry-run remediate via **`gomboc_community_cap_orl_remediate`** against `./workspace` while debugging.
+Execute **`gomboc_community_task_run_orl_test_loop`** with `rule_package` set to the same path as `package_path` from setup. Optionally dry-run remediate via **`gomboc_community_cap_orl_remediate`** against `./workspace` while debugging.
 
 ### 5 — Template helpers (optional)
 

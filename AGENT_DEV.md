@@ -150,6 +150,7 @@ Commands live in `commands/`:
 
 | Skill | Purpose |
 |-------|---------|
+| `gomboc_community_know_gomboc_mcp` | Hosted MCP setup; prefer MCP when available; soft capability map + discovery |
 | `gomboc_community_know_orl_runtime_resolution` | Docker `gombocai/orl` invocation |
 | `gomboc_community_know_language_guidance` | Per-language ORL authoring notes |
 | `gomboc_community_know_sentinel_conversion` | Sentinel vs ORL paradigm |
@@ -163,8 +164,8 @@ Commands live in `commands/`:
 
 ```
 gomboc_community_flow_diagnose
-  → gomboc_community_flow_apply_fix
-  → (optional) gomboc_community_task_enrich_rule
+  → gomboc_community_flow_apply_fix          # fix only
+  → (optional) gomboc_community_task_enrich_rule   # flow_fix Phase 3 owns save/release
   → (optional) gomboc_community_task_release_rule
 ```
 
@@ -202,13 +203,14 @@ gomboc_community_task_orl_planner
 - [ ] Flow skills delegate to tasks; tasks delegate to caps
 - [ ] No invented CLI flags (skill inputs ≠ `orl` arguments)
 - [ ] ORL runtime resolved via `gomboc_community_know_orl_runtime_resolution`
+- [ ] MCP prefer/fallback via `gomboc_community_know_gomboc_mcp` when the step maps to an MCP intent
 - [ ] Engineer confirmation before any non-dry-run remediate
-- [ ] Remote rule discovery uses `gomboc_community_cap_orl_rules_pull` (pull-with-search), not a fake search-only `orl` command
+- [ ] Remote rule discovery prefers MCP lookup when available, then `gomboc_community_cap_orl_rules_pull` (pull-with-search), not a fake search-only `orl` command
 
 ### Artifacts
 
 - [ ] Outputs under workspace paths documented (e.g. `.orl-fixes/`, `.gomboc/` if used)
-- [ ] Token env vars (`RULE_SERVICE_TOKEN` / `GOMBOC_PAT`) never logged
+- [ ] Auth token env vars never logged (see `gomboc_community_know_orl_runtime_resolution` / integrations submitters)
 
 ---
 
@@ -287,6 +289,7 @@ When splitting orchestration:
 | Duplicate command + flow docs | Flow skill is canonical; command lists sequence only |
 | Flat `skills/foo.md` | Directory `skills/foo/SKILL.md` + manifest registration |
 | Inlining Docker/`orl` in every skill | Depend on `gomboc_community_know_orl_runtime_resolution` + caps |
+| Hardcoding MCP tool lists | Depend on `gomboc_community_know_gomboc_mcp`; re-discover tools; soft map may be stale |
 
 ---
 
@@ -300,4 +303,4 @@ When splitting orchestration:
 ### Prerequisites
 
 - Docker for `gombocai/orl` (see `gomboc_community_know_orl_runtime_resolution`)
-- `RULE_SERVICE_TOKEN` or `GOMBOC_PAT` for Rules Service pull/push
+- Auth token for Rules Service pull/push and integrations submit — prefer `GOMBOC_PAT`; undocumented legacy fallbacks (`RULE_SERVICE_TOKEN` for `orl`, `GOMBOC_ACCESS_TOKEN` / `GOMBOC_API_TOKEN` for report submit) are resolved in `gomboc_community_know_orl_runtime_resolution` and `scripts/integrations/submit-orl-report.*`
